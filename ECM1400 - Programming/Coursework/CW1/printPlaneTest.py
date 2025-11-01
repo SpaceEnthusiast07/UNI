@@ -21,12 +21,51 @@ def print_tail():
 	print(" "*7 + "\\/" + " "*7)
 
 
+plane = [["empty","empty","empty","empty","empty","empty"],
+		 ["empty","empty","empty","empty","empty","empty"],
+		 ["empty","empty","empty","empty","empty","empty"],
+		 ["empty","empty","empty","empty","empty","empty"],
+		 ["empty","empty","empty","empty","empty","empty"],
+		 ["empty","empty","empty","empty","empty","empty"],
+		 ["empty","empty","empty","empty","empty","empty"],
+		 ["empty","empty","empty","empty","empty","empty"],
+		 ["empty","empty","empty","empty","empty","empty"],
+		 ["empty","empty","empty","empty","empty","empty"],
+		 ["empty","empty","empty","booked","empty","empty"],
+		 ["empty","empty","empty","empty","empty","empty"],
+		 ["empty","empty","empty","empty","empty","empty"],
+		 ["booked","booked","booked","empty","empty","empty"],
+		 ["empty","empty","empty","empty","empty","empty"],
+		 ["empty","empty","empty","booked","booked","empty"],
+		 ["empty","empty","empty","empty","empty","empty"],
+		 ["empty","empty","empty","empty","empty","empty"]]
+
+
+
+
 print_nose()
-for i in range(18):
-		# Are we on row 10, if so, print exit row
-		if (i == 10):
-			print("¦" + " "*14 + "¦")
-		else:
-			print("| " + "U "*3 + " " + "U "*3 + "|")
+rowString = "| "
+for i in range(len(plane)):
+		# If on row 11 (index 10), print exit row
+		if i == 10:
+			print("|" + " "*(len(rowString) - 2) + "|")
+		
+		rowString = "| "
+		for j in range(len(plane[i])):
+			# If on seat 4 (index 3), add "  " to rowString
+			if j == 3:
+				rowString += "  "
+			
+			# If current seat empty, add "U " to rowString
+			if plane[i][j] == "empty":
+				rowString += "U "
+			elif plane[i][j] == "booked":
+				rowString += "# "
+			
+		# Add right wall to rowString
+		rowString += "|"
+
+		# Output the current row
+		print(rowString)
 
 print_tail()
