@@ -26,10 +26,10 @@ plane = [["empty","empty","empty","empty","empty","empty"],
 		 ["empty","empty","empty","empty","empty","empty"],
 		 ["empty","empty","empty","empty","empty","empty"],
 		 ["empty","empty","empty","empty","empty","empty"],
+		 ["empty","empty","premium","empty","empty","empty"],
 		 ["empty","empty","empty","empty","empty","empty"],
 		 ["empty","empty","empty","empty","empty","empty"],
-		 ["empty","empty","empty","empty","empty","empty"],
-		 ["empty","empty","empty","empty","empty","empty"],
+		 ["empty","empty","empty","premium","empty","empty"],
 		 ["empty","empty","empty","empty","empty","empty"],
 		 ["empty","empty","empty","booked","empty","empty"],
 		 ["empty","empty","empty","empty","empty","empty"],
@@ -42,6 +42,12 @@ plane = [["empty","empty","empty","empty","empty","empty"],
 
 
 letters = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z']
+
+# Display key
+print("Key:")
+print(" U = Empty Seat")
+print(" # = Booked Seat")
+print(" P = Premium Booked Seat\n")
 
 print_nose()
 # Print the column numbers
@@ -68,6 +74,9 @@ for i in range(len(plane)):
 			# If current seat is booked, add "# " to rowString
 			elif plane[i][j] == "booked":
 				rowString += "# "
+			# If current seat is premium, add "P " to row string
+			elif plane[i][j] == "premium":
+				rowString += "P "
 			
 		# Add right wall to rowString
 		rowString += "|"
