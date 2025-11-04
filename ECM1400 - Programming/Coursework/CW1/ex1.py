@@ -21,6 +21,3 @@ def kelvin(temperature, to_kelvin=True):
     
     # Return the converted temperature
     return convertedTemperature
-
-# Test case
-print(kelvin(20.8, True))
