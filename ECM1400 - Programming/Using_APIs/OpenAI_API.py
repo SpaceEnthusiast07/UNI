@@ -7,8 +7,8 @@
 import requests, json
 
 # Read in the NewsAPI Key
-with open("api-key.json") as f:
-    data = json.loads(f)
+with open('api-key.json', 'r') as f:
+    data = json.load(f)
     api_key = data["News_API"]["API_Key"]
 
 # Create the URl for the News API
