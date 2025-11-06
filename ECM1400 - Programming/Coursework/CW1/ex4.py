@@ -39,14 +39,8 @@ def swapAndThe(text):
 
 # Define fucntion to make every third letter uppercase
 def uppercase(text):
-    # Check if the first character is a space
-    if (text[0] == " "):
-        startIndex = 1
-    else:
-        startIndex = 0
-    
     # Loop through each character and make the third one uppercase
-    for i in range(startIndex, len(text), 3):
+    for i in range(0, len(text), 3):
         try:
             # Try to change the char to uppercase
             text = replaceChar(text=text, newChar=text[i].upper(), index=i)
@@ -88,7 +82,7 @@ def reverseFifthWord(text):
 
 # Function to apply a caeser cipher shift of key 1 to every other word
 def applyCaeserShift(text):
-    # Check if a space if present at the start
+    # Check if a space is present at the start
     if (text[0] == " "):
         spaceAtStart = True
     else:
@@ -98,7 +92,7 @@ def applyCaeserShift(text):
     segmentedText = text.split()
 
     # Loop through every other word, applying the caser cipher
-    for i in range(0,len(segmentedText),2):
+    for i in range(1,len(segmentedText),2):
         # Store the current word
         word = segmentedText[i]
 
@@ -115,6 +109,18 @@ def applyCaeserShift(text):
 
             # Replace the old letter with the new one
             word = replaceChar(text=word, newChar=letter, index=j)
+        
+        # Store the new word in the segmented text
+        segmentedText[i] = word
+    
+    # If space at start, add this back
+    if (spaceAtStart):
+        text = " "
+    else:
+        text = ""
+    
+    # Join the segmented text back together and join onto text
+    text += " ".join(segmentedText)
     
     # Return the modifed text
     return text
