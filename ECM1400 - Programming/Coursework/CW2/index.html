@@ -133,7 +133,7 @@
         <div class="board_grid">
             {% for i in range(game_board|length) %}
                 {% for j in range(game_board|length) %}
-                    <div class="cell" id = "cell-{{ j }}-{{ i }}" onclick="sendMove({{ j+1 }}, {{ i+1 }}, '/move')">
+                    <div class="cell" id = "cell-{{ j }}-{{ i }}" onclick="sendMove({{ j+1 }}, {{ i+1 }}, &#39;/move&#39;)">
                         {% if game_board[i][j] == 'Dark ' %}
                             <div class="piece black"></div>
                         {% elif game_board[i][j] == 'Light' %}
