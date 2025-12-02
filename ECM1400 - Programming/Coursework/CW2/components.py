@@ -60,7 +60,7 @@ def legal_move(colour, coordinate, board):
     # Array of directions
     directions = np.array([(0,-1),(1,-1),(1,0),(1,1),(0,1),(-1,1),(-1,0),(-1,-1)])
     # Convert the coordinate to a numpy array
-    coordinate = np.array(coordinate) - 1
+    coordinate = np.array(coordinate) - np.array([1,1])
     # Initialise the legalDirection, representing if there exists a direction that is legal
     legalDirection = False
     
@@ -70,7 +70,7 @@ def legal_move(colour, coordinate, board):
         cellToCheck = coordinate + direction
 
         # Ensure the next cell along the direction is within the board boundaries
-        if (cellToCheck[0] > 1 or cellToCheck[0] < size or cellToCheck[1] > 1 or cellToCheck[1] < size):
+        if ((cellToCheck[0] > -1) and (cellToCheck[0] < size) and (cellToCheck[1] > -1) and (cellToCheck[1] < size)):
             # Check if the cell contains "None ", if not, a legal move is possible along this direction
             if (board[cellToCheck[0], cellToCheck[1]] != "None "):
                 # Analsye the first cell in this direction
@@ -119,8 +119,9 @@ board = initialise_board()
 # Calculate the size of the board
 size = len(board[0])
 
-i=0
-while True:
+for i in range(1000):
+    # Clear the screen for the next player
+    os.system("cls")
     print("\n=== Revelio Game ===")
     # Display the current state of the board
     print_board(board)
@@ -129,16 +130,14 @@ while True:
     if i % 2 == 0: colour = "Dark "
     else: colour = "Light"
 
+    print(board)
+
     # Input the x-coord for the next move
-    userCoordX = input(f"\nx coord for {colour}? ")
+    userCoordX = int(input(f"\nx coord for {colour}? "))
     if userCoordX == "q": break
 
     # Input the y-coord for the next move
-    userCoordY = input("y coord for dark? ")
+    userCoordY = int(input(f"y coord for {colour}? "))
 
     # Check if this is a legal move
     print(f"The result of this move is: {legal_move(colour, (int(userCoordY), int(userCoordX)), board)}\n\n\n")
-    i+=1
-
-    # Clear the screen for the next player
-    os.system("cls")
