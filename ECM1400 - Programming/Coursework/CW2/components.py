@@ -65,6 +65,8 @@ def legal_move(colour, coordinate, board):
     # First, lets check whether a counter is already present at this location
     if (board[coordinate[1], coordinate[0]] != "None "): return False
 
+    # Calculate the size of the board
+    size = len(board[0])
     # Array of directions
     directions = np.array([(0,-1),(1,-1),(1,0),(1,1),(0,1),(-1,1),(-1,0),(-1,-1)])
     # Convert the coordinate to a numpy array
@@ -82,7 +84,7 @@ def legal_move(colour, coordinate, board):
             # Check if the cell contains "None ", if not, a legal move is possible along this direction
             if (board[cellToCheck[1], cellToCheck[0]] != "None "):
                 # Analsye the first cell in this direction
-                result = analyse_cell(colour, cellToCheck, board, direction)
+                result = analyse_cell(colour, cellToCheck, board, direction, size)
                 # Check if this direction has resulted in an outflank
                 if (result): 
                     legalDirection = True
@@ -93,7 +95,7 @@ def legal_move(colour, coordinate, board):
 
 
 # Function to analyse a cell to determine if the player can outflank the other
-def analyse_cell(colour, cellToCheck, board, direction):
+def analyse_cell(colour, cellToCheck, board, direction, size):
     # Base Case: Check if we are outside the boundaries of the board
     if (cellToCheck[0] < 0 or cellToCheck[0] > size or cellToCheck[1] < 0 or cellToCheck[1] > size):
         # Since we have gone outside the boundaries of the board, this direction must not contain any other counters
@@ -109,7 +111,7 @@ def analyse_cell(colour, cellToCheck, board, direction):
     # Otherwise, we must have reached the other player's colour
     else:
         # Since this cell contains the other player's colour, analyse the next cell along the current direction
-        result = analyse_cell(colour, cellToCheck + direction, board, direction)
+        result = analyse_cell(colour, cellToCheck + direction, board, direction, size)
         # If result is true, that means player has outflanked the other player along this direction
         if (result == True):
             # Therefore, change this cell to the player's colour
