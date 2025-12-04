@@ -5,6 +5,16 @@
     <meta charset="UTF-8">
     <title>Othello Board</title>
     <style>
+        html * {
+            font-family: "Arial";
+        }
+        body {
+            display: flex;
+            flex-direction: column; /* Stack Title and Game Area vertically */
+            align-items: center; /* Center everything horizontally */
+            min-height: 100vh; /* Use full viewport height */
+            margin: 0;
+        }
         .container {
             display: flex;
             justify-content: center;
@@ -19,7 +29,8 @@
             background: #006400;
             padding: 10px;
             width: fit-content;
-            margin: 40px auto;
+            margin: 0 40px 0 0;
+            border-radius: 10px
         }
         .cell {
             width: 60px;
@@ -46,10 +57,25 @@
             border: 1px solid #222;
         }
         #messageBox{
-            height: 10em; /* Adjust as needed */
-            overflow-y: auto; /* Enable vertical scrolling */
-            white-space: pre-line; /* Preserve line breaks */
-            line-height: 1em; /* Adjust as needed */
+            display: flex; /* Make it a flex container to align its own children */
+            flex-direction: column; /* Stack log items vertically */
+            width: 300px; /* Use a fixed width for the log box for predictable size */
+            /* Log Box Styling */
+            border: 1px solid black; 
+            padding: 10px; 
+            border-radius: 15px;
+            /* Flexbox Property for height matching */
+            align-self: stretch; /* This forces it to match the height of the board_grid */
+            /* Log specific properties */
+            overflow-y: auto; 
+            /* The height: 10em; and line-height: 1em; were making it too small. Remove them. */
+            margin: 0;
+        }
+        #game_area {
+            display: flex;
+            justify-content: center; /* Horizontally center the board/log group */
+            align-items: center; /* Vertically center the board/log group in the viewport */
+            height: 70vh; /* Set the height of the entire game area */
         }
     </style>
     <script>
@@ -78,7 +104,7 @@
             .then(data => {
                 // Process the response
                 if (data['status'] === 'success'){
-                    updateMessageBox('Valid move at (' + x + ', ' + y + ')\n');
+                    updateMessageBox('Valid move at (' + x + ', ' + y + ')<br>');
                     updateMessageBox("It's " + data['player'] + "'s turn.");
                     //Update the board
                     board = data['board'];
@@ -91,7 +117,7 @@
                 }
                 
                 else if (data['status'] === 'no_legal_moves'){
-                    updateMessageBox('No legal moves available for ' + data['player'] + '\n');
+                    updateMessageBox('No legal moves available for ' + data['player'] + '<br>');
                     if (data['player'] === 'Dark '){updateMessageBox("It's Lights's turn.");}
                     else{updateMessageBox("It's Darks's turn.");}
                 }
@@ -102,7 +128,7 @@
                     board = data['board'];
                     // Reload the board
                     loadBoard();        
-                    document.getElementById('messageBox').innerHTML = 'Game Over\nDark scored ' + data['scores'][1] + ' points\nLight scored ' + data['scores'][0] + ' points\n\n' + 
+                    document.getElementById('messageBox').innerHTML = 'Game Over<br><br>Dark scored ' + data['scores'][1] + ' points<br>Light scored ' + data['scores'][0] + ' points<br><br>' + 
                     data['winner'] + ' is the winner!';
                 }
             })
@@ -131,32 +157,37 @@
 
         function updateMessageBox(message) {
             let messageBox = document.getElementById('messageBox');
-            messageBox.innerHTML += message + '\n';
+            messageBox.innerHTML += message + '<br>';
             messageBox.scrollTop = messageBox.scrollHeight; // Auto-scroll to the bottom
         }
     </script>
 </head>
 <body>
-    <h1 style="text-align:center;">Othello/Reversi Game</h1>
-    <div class="container">
-        <div class="container">
-            <div class="board_grid">
-                {% for i in range(game_board|length) %}
-                    {% for j in range(game_board|length) %}
-                        <div class="cell" id = "cell-{{ j }}-{{ i }}" onclick="sendMove({{ j+1 }}, {{ i+1 }}, '/move')">
-                            {% if game_board[i][j] == 'Dark ' %}
-                                <div class="piece black"></div>
-                            {% elif game_board[i][j] == 'Light' %}
-                                <div class="piece white"></div>
-                            {% endif %}
-                        </div>
-                    {% endfor %}
+    <div id="title">
+        <h1 style="text-align:center;">Othello(Reversi) Game</h1>
+    </div>
+    
+    <div id="game_area">
+        <div class="board_grid">
+            {% for i in range(game_board|length) %}
+                {% for j in range(game_board|length) %}
+                    <div class="cell" id = "cell-{{ j }}-{{ i }}" onclick="sendMove({{ j+1 }}, {{ i+1 }}, '/move')">
+                        {% if game_board[i][j] == 'Dark ' %}
+                            <div class="piece black"></div>
+                        {% elif game_board[i][j] == 'Light' %}
+                            <div class="piece white"></div>
+                        {% endif %}
+                    </div>
                 {% endfor %}
-            </div>
+            {% endfor %}
         </div>
-        <div id="messageBox" style="width: 20%; height: 100%; border: 1px solid black; padding: 10px; overflow-y: auto; margin: 30px;">
+        <div id="messageBox">
             <h2>Game Log:</h2>
         </div>
+    </div>
+
+    <div id="utility_buttons">
+
     </div>
 </body>
 </html>
