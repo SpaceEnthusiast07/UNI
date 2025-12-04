@@ -67,7 +67,7 @@ def legal_move(colour, coordinate, board, modifyBoard):
     # Array of directions
     directions = np.array([(0,-1),(1,-1),(1,0),(1,1),(0,1),(-1,1),(-1,0),(-1,-1)])
     # Convert the coordinate to a numpy array
-    coordinate = np.array(coordinate) - 1
+    coordinate = np.array(coordinate) - np.array((1,1))
     # Initialise the legalDirection, representing if there exists a direction that is legal
     legalDirection = False
 
