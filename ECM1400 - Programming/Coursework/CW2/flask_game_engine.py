@@ -1,8 +1,15 @@
 from flask import Flask, render_template, request
 import components as comp
 
+# Allows the browser to automatically refresh when the webpage files are changed
+# Only activates when debug=True in the flask app
+from flask_livereload import LiveReload
+
 # Create a Flask app with this file as the main entry point
 app = Flask(__name__)
+
+# Initialise the liveloader
+livereload = LiveReload(app)
 
 
 # Function determines if any legal moves remain for a given player
@@ -153,7 +160,21 @@ def move():
     }
 
 
+@app.route('/same_game_board', methods=['POST'])
+def saveGameBoard():
+    # Ensure this function can deal with the GET method
+    if request.method == 'POST':
+        filePath = request.args['filePath']
+    else: return {'status': 'error'}
+    print(filePath)
+    return {'status': 'success'}
+
+
+
 # Only run the app if the current file is being run directly
 if __name__ == "__main__":
-    app.run() # Start the local web server
+    # Start the local web server
+    # When in debug mode, any change to the python files 
+    # will cause an automatic server
+    app.run(debug=True)
 

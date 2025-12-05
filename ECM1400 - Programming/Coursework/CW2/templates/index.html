@@ -39,7 +39,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 4px;
+            border-radius: 6px;
         }
         .cell:hover {
             background: #dd0712;
@@ -62,20 +62,37 @@
             width: 300px; /* Use a fixed width for the log box for predictable size */
             /* Log Box Styling */
             border: 1px solid black; 
-            padding: 10px; 
+            padding: 20px; 
             border-radius: 15px;
             /* Flexbox Property for height matching */
             align-self: stretch; /* This forces it to match the height of the board_grid */
             /* Log specific properties */
             overflow-y: auto; 
             /* The height: 10em; and line-height: 1em; were making it too small. Remove them. */
-            margin: 0;
+            margin: 10px 10px 10px 0;
         }
         #game_area {
             display: flex;
             justify-content: center; /* Horizontally center the board/log group */
             align-items: center; /* Vertically center the board/log group in the viewport */
             height: 70vh; /* Set the height of the entire game area */
+        }
+        #utility_buttons {
+            display: flex;
+            justify-content: center;
+            margin: 10px;
+            height: 20%;
+        }
+        button {
+            margin: 10px;
+            height: 50px;
+            width: 100px;
+            font-size: 18px;
+            border-radius: 10px;
+        }
+        button:hover {
+            background-color: #228B22;
+            color: white;
         }
     </style>
     <script>
@@ -160,6 +177,33 @@
             messageBox.innerHTML += message + '<br>';
             messageBox.scrollTop = messageBox.scrollHeight; // Auto-scroll to the bottom
         }
+
+        function saveGameBoard(url, filePath) {
+            fetch(url, {
+                method: 'POST',
+                body: filePath
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Process the response
+                if (data['status'] === 'success'){
+                    // Inform the user that the board has successfully been saved
+                    alert("Board state successfully saved!");
+                    //Update the board
+                    board = data['board'];
+                    //Reload the board
+                    loadBoard();
+                }
+                
+                else if (data['status'] === 'fail'){
+                    // Inform the user that the board isn't saved
+                    alert("Error: Board not saved!");
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
     </script>
 </head>
 <body>
@@ -182,12 +226,16 @@
             {% endfor %}
         </div>
         <div id="messageBox">
-            <h2>Game Log:</h2>
+            <h2 style="margin: 0 0 10px 0;">Game Log:</h2>
         </div>
     </div>
 
     <div id="utility_buttons">
-
+        <button id="saveBtn" onclick="saveGameBoard('/save_game_board')">Save</button>
+        <label for="saveLocation">Save</label>
+        <input type="file" id="saveLocation" name="saveLocation" onchange="saveGameBoard('/save_game_board', this.File)">
+        <button id="loadBtn">Load</button>
+        <button id="resetBtn">Reset</button>
     </div>
 </body>
 </html>
