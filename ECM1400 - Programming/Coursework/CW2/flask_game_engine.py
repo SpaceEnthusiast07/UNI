@@ -1,5 +1,7 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, Response, jsonify
 import components as comp
+import json
+import numpy as np
 
 # Allows the browser to automatically refresh when the webpage files are changed
 # Only activates when debug=True in the flask app
@@ -60,6 +62,11 @@ def move():
 
     # If game is over, exit function
     if (gameOver): return {'status': 'game_over'}
+
+    # Check if there are any moves left
+    if (moveCounter == 0):
+        gameOver = True
+        return {'status': 'game_over'}
 
     # Ensure this function can deal with the GET method
     if request.method == 'GET':
@@ -151,6 +158,9 @@ def move():
     # Switch to other player
     if (currentPlayer == "Dark "): currentPlayer = "Light"
     else: currentPlayer = "Dark "
+
+    # Decrement the move counter
+    moveCounter -= 1
     
     # Return the success status and the new state of the board
     return {
@@ -160,15 +170,100 @@ def move():
     }
 
 
+# Function that allows the user to save the state of the game to their computer
 @app.route('/same_game_board', methods=['POST'])
 def saveGameBoard():
-    # Ensure this function can deal with the GET method
-    if request.method == 'POST':
-        filePath = request.args['filePath']
-    else: return {'status': 'error'}
-    print(filePath)
-    return {'status': 'success'}
+    # Create the json object to store in the json file
+    gameBoardFile = {
+        'board': board.tolist(),
+        'game_over': gameOver,
+        'move_counter': moveCounter,
+        'current_player': currentPlayer,
+        'game_log': request.get_data(as_text=True)
+    }
 
+    # Convert the python dictionary to a json string
+    # .encode("utf-8") - converts the python string to bytes so the browser can download the file
+    json_bytes = json.dumps(gameBoardFile, indent=4).encode("utf-8")
+
+    # Create and return a custom Flask Response object
+    return Response(
+        json_bytes, # The file content the user will download
+        mimetype="application/json", # Tells the browser what file type it is - in this case, the file type is json
+        # This is the part which forces the browser to download the file instead of displaying it
+        # attachment - triggers the file download
+        # filename=data.json - tells the browser which file name to use
+        headers={"Content-Disposition": "attachment; filename=reversi_game_board_save.json"}
+    )
+
+
+# Function that loads a previous reversi game
+@app.route('/load_game_board', methods=['POST'])
+def loadGameBoard():
+    # Ensure python accesses the global variables
+    global board
+    global moveCounter
+    global currentPlayer
+    global gameOver
+
+    # Extract the file from the request
+    sentFile = request.files.get('file')
+
+    # If file is empty, return error message
+    if (not sentFile): return {'status': "fail", 'error_message': "No file received!"}
+
+    # Read the contents of the file
+    file_bytes = sentFile.read()
+
+    # Convert bytes to string to Python object
+    try:
+        gameBoardFile = json.loads(file_bytes.decode("utf-8"))
+    except json.JSONDecodeError:
+        return {'status': "fail", 'error_message': "Invalid JSON file!"}
+    
+    # Extract the required information from the file
+    board = np.array(gameBoardFile['board'])
+    gameOver = gameBoardFile['game_over']
+    moveCounter = gameBoardFile['move_counter']
+    currentPlayer = gameBoardFile['current_player']
+    gameLog = gameBoardFile['game_log']
+
+    # Return success status and new board state
+    return {
+        'status': 'success',
+        'board': board.tolist(),
+        'current_player': currentPlayer,
+        'game_log': gameLog
+    }
+
+
+# Function that resets the board, ready for a new game
+@app.route('/reset_board')
+def resetBoard():
+    # Ensure python accesses the global variables
+    global board
+    global moveCounter
+    global currentPlayer
+    global gameOver
+
+    # First initialise a new board
+    board = comp.initialise_board()
+
+    # Reset the move counter
+    moveCounter = 60
+
+    # Change the current player back to Dark
+    currentPlayer = "Dark "
+
+    # Set game over to false
+    gameOver = False
+
+    # Return success status and the new board
+    return {
+        'status': 'success',
+        'board': board.tolist(),
+        'current_player': currentPlayer
+    }
 
 
 # Only run the app if the current file is being run directly

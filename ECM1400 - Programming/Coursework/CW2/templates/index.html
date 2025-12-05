@@ -94,6 +94,26 @@
             background-color: #228B22;
             color: white;
         }
+        #fileInput {
+            display: none;
+        }
+        #loadBtn {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 10px;
+            height: 50px;
+            width: 100px;
+            font-size: 18px;
+            border-radius: 10px;
+            background-color: #F0F0F0;
+            border: 2px solid #222;
+            box-sizing: border-box;
+        }
+        #loadBtn:hover {
+            background-color: #228B22;
+            color: white;
+        }
     </style>
     <script>
         //Get the board that is passed from the python flask code
@@ -101,12 +121,13 @@
         //console.log(board);
 
         // Load the grid format once the page has loaded
-
-
         document.addEventListener('DOMContentLoaded', function() {
             loadBoard();
             updateMessageBox("It's Dark's turn.");
         }, false);
+
+        // Change the height of the game log div to match the board's height
+        //document.getElementById('messageBox').style.height = document.getElementById('board_grid').style.height;
 
         function sendMove(x, y, url) {
             /**
@@ -174,30 +195,104 @@
 
         function updateMessageBox(message) {
             let messageBox = document.getElementById('messageBox');
-            messageBox.innerHTML += message + '<br>';
+            let messageBoxContent = document.getElementById('messageBoxContent');
+            messageBoxContent.innerHTML += message + '<br>';
             messageBox.scrollTop = messageBox.scrollHeight; // Auto-scroll to the bottom
         }
 
-        function saveGameBoard(url, filePath) {
+        function saveGameBoard(url) {
+            //window.location.href = url;
+            // Formulate a new response object
             fetch(url, {
-                method: 'POST',
-                body: filePath
+                method: "POST",
+                headers: {"Content-Type": "text/plain"},
+                body: document.getElementById('messageBoxContent').innerHTML
+            })
+            .then(response => response.blob())
+            .then(blob => {
+                // Create a temporary download link
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "reversi_game_board_save.json";   // name saved on user's machine
+                document.body.appendChild(a);
+                a.click();
+
+                // Clean up
+                a.remove();
+                window.URL.revokeObjectURL(url);
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
+
+        async function loadGameBoard() {
+            // Get access to the file input element
+            const input = document.getElementById('fileInput');
+
+            // If the user has accidentally clicked load with no file selected,
+            // then inform them that they need to select a file first
+            if (input.files.length === 0) {
+                alert("Please choose a file first!");
+                return;
+            }
+
+            // Retrieve the first file they selected
+            const file = input.files[0];
+            // Allows us to send multi-part data
+            const formData = new FormData();
+            // Similar to a dictionary, "file" allows use to access the file
+            formData.append("file", file);
+
+            // Formulate a new response object
+            const response = await fetch("/load_game_board", {
+                method: "POST",
+                body: formData
             })
             .then(response => response.json())
             .then(data => {
                 // Process the response
                 if (data['status'] === 'success'){
-                    // Inform the user that the board has successfully been saved
-                    alert("Board state successfully saved!");
-                    //Update the board
+                    // Update the game log with the log of the game
+                    document.getElementById('messageBoxContent').innerHTML = data['game_log'];
+                    // Update the board
                     board = data['board'];
-                    //Reload the board
+                    // Reload the board
                     loadBoard();
                 }
                 
                 else if (data['status'] === 'fail'){
-                    // Inform the user that the board isn't saved
-                    alert("Error: Board not saved!");
+                    // Update the game log box with the error message
+                    document.getElementById('messageBoxContent').innerHTML = data['error_message'] + "<br>";
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+
+            // Reset the file input value
+            document.getElementById('fileInput').value = "";
+        }
+
+        function resetBoard(url) {
+            fetch(url, {
+                method: 'GET',
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Process the response
+                if (data['status'] === 'success'){
+                    // Reset the game log box
+                    document.getElementById('messageBoxContent').innerHTML = "It's Dark's turn. <br>";
+                    // Update the board
+                    board = data['board'];
+                    // Reload the board
+                    loadBoard();
+                }
+                
+                else if (data['status'] === 'fail'){
+                    document.getElementById('messageBoxContent').innerHTML = "Unable to reset board.";
                 }
             })
             .catch((error) => {
@@ -208,11 +303,11 @@
 </head>
 <body>
     <div id="title">
-        <h1 style="text-align:center;">Othello(Reversi) Game</h1>
+        <h1 style="text-align:center;">Othello (Reversi) Game</h1>
     </div>
     
     <div id="game_area">
-        <div class="board_grid">
+        <div id="board_grid" class="board_grid">
             {% for i in range(game_board|length) %}
                 {% for j in range(game_board|length) %}
                     <div class="cell" id = "cell-{{ j }}-{{ i }}" onclick="sendMove({{ j+1 }}, {{ i+1 }}, '/move')">
@@ -226,16 +321,16 @@
             {% endfor %}
         </div>
         <div id="messageBox">
-            <h2 style="margin: 0 0 10px 0;">Game Log:</h2>
+            <h2 id="messageBoxTitle" style="margin: 0 0 10px 0;">Game Log:</h2>
+            <p id="messageBoxContent"></p>
         </div>
     </div>
 
     <div id="utility_buttons">
-        <button id="saveBtn" onclick="saveGameBoard('/save_game_board')">Save</button>
-        <label for="saveLocation">Save</label>
-        <input type="file" id="saveLocation" name="saveLocation" onchange="saveGameBoard('/save_game_board', this.File)">
-        <button id="loadBtn">Load</button>
-        <button id="resetBtn">Reset</button>
+        <button id="saveBtn" onclick="saveGameBoard('/same_game_board')">Save</button>
+        <label id="loadBtn" for="fileInput">Load</label>
+        <input type="file" id="fileInput" onchange="loadGameBoard()">
+        <button id="resetBtn" onclick="resetBoard('/reset_board')">Reset</button>
     </div>
 </body>
 </html>
