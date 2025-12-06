@@ -49,8 +49,11 @@ def simple_game_loop():
 
     # Initialise the move counters
     moveCounter = 60
-    lightCounter = 0
-    darkCounter = 0
+    #lightCounter = 0
+    #darkCounter = 0
+
+    # Initialise global game over tracker
+    gameOver = False
 
     # Initialise legalMovePossible and noLegalMoveCounter
     legalMovePossible = True
@@ -72,25 +75,53 @@ def simple_game_loop():
         # Display the board
         comp.print_board(board)
 
+        # If game is over, exit loop
+        if (gameOver): break
+
+        # Check if there are any moves left
+        if (moveCounter == 0):
+            gameOver = True
+            break
+
         # Check if there are any legal moves available for the current player
         if (not any_legal_moves(currentPlayer, board)):
+            # Determine the other player
+            if (currentPlayer == "Dark "): otherPlayer = "Light"
+            else: otherPlayer = "Dark "
+
             # Check whether either player can make a move
-            if (noLegalMoveCounter == 2): 
-                legalMovePossible = False
+            if (not any_legal_moves(otherPlayer, board)): 
+                # Therefore, game is over
+                # Initialise player score counters
+                lightCounter = 0
+                darkCounter = 0
+
+                # Calculate the number of counters for each player
+                for row in board:
+                    for cell in row:
+                        if (cell == "Dark "): darkCounter += 1
+                        elif (cell == "Light"): lightCounter += 1
+                
+                # Determine who is the winner
+                if (darkCounter > lightCounter): winner = "Dark"
+                else: winner = "Light"
+                
+                gameOver = True
+                # Break out of game loop
                 break
-
-            # Increment noLegalMoveCounter
-            noLegalMoveCounter += 1
-
+        
             # Switch to other player
-            if (currentPlayer == "Dark "): currentPlayer = "Light"
-            else: currentPlayer = "Dark "
+            if (currentPlayer == "Dark "):
+                # Inform the player that they have no legal moves
+                print(currentPlayer + "has no legal moves!")
+                currentPlayer = "Light"
+            else:
+                # Inform the player that they have no legal moves
+                print(currentPlayer + " has no legal moves!")
+                currentPlayer = "Dark "
 
             # Continue to next loop
             continue
-
-        # Reset noLegalMoveCounter
-        noLegalMoveCounter = 0
 
         # Initialise legalMoveMade
         legalMoveMade = False
@@ -115,24 +146,42 @@ def simple_game_loop():
             # Set legalMoveMade to True
             legalMoveMade = True
         
-        # Increment the number of counters for the current player and move to the other player
-        if (currentPlayer == "Dark "): 
-            # Increment dark's counter
-            darkCounter += 1
-            # Move to light's turn
-            currentPlayer = "Light"
-        else: 
-            # Increment light's counter
-            lightCounter += 1
-            # Move to dark's turn
-            currentPlayer = "Dark "
+        otherPlayerCounter = 0
+        # Determine the other player
+        if (currentPlayer == "Dark "): otherPlayer = "Light"
+        else: otherPlayer = "Dark "
+        # Initialise player score counters
+        lightCounter = 0
+        darkCounter = 0
+        # Calculate the number of counters for the other player
+        for row in board:
+            for cell in row:
+                if (cell == otherPlayer): otherPlayerCounter += 1
+                if (cell == "Dark "): darkCounter += 1
+                if (cell == "Light"): lightCounter += 1
+        
+        # Determine who is the winner
+        if (darkCounter > lightCounter): winner = "Dark"
+        else: winner = "Light"
+        
+        # If no of the other player's counters are present, game is over
+        if (otherPlayerCounter == 0):
+            gameOver = True
+            continue
+        
+        # Switch to other player
+        if (currentPlayer == "Dark "): currentPlayer = "Light"
+        else: currentPlayer = "Dark "
+
+        # Decrement the move counter
+        moveCounter -= 1
         
         # Output legal move
         print("\nMove is legal!")
         time.sleep(2)
     
     # Print game over message and who won along with the counter stats
-    print("-- GAME OVER --")
+    print("\n-- GAME OVER --")
     # Check who won
     if (darkCounter > lightCounter): print("Dark Won!")
     else: print("Light Won!")
