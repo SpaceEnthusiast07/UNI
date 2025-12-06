@@ -166,7 +166,8 @@
                     board = data['board'];
                     // Reload the board
                     loadBoard();        
-                    document.getElementById('messageBox').innerHTML = 'Game Over<br><br>Dark scored ' + data['scores'][1] + ' points<br>Light scored ' + data['scores'][0] + ' points<br><br>' + 
+                    document.getElementById('messageBoxTitle').innerHTML = 'Game Over';
+                    document.getElementById('messageBoxContent').innerHTML = 'Dark scored ' + data['scores'][1] + ' points<br>Light scored ' + data['scores'][0] + ' points<br><br>' + 
                     data['winner'] + ' is the winner!';
                 }
             })
@@ -284,6 +285,7 @@
                 // Process the response
                 if (data['status'] === 'success'){
                     // Reset the game log box
+                    document.getElementById('messageBoxTitle').innerHTML = 'Game Log';
                     document.getElementById('messageBoxContent').innerHTML = "It's Dark's turn. <br>";
                     // Update the board
                     board = data['board'];
@@ -321,7 +323,7 @@
             {% endfor %}
         </div>
         <div id="messageBox">
-            <h2 id="messageBoxTitle" style="margin: 0 0 10px 0;">Game Log:</h2>
+            <h2 id="messageBoxTitle" style="margin: 0 0 10px 0;">Game Log</h2>
             <p id="messageBoxContent"></p>
         </div>
     </div>
