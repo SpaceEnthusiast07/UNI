@@ -136,7 +136,7 @@
         //document.getElementById('messageBox').style.height = document.getElementById('board_grid').style.height;
 
         function sendAIMove() {
-            fetch('/move?x=1&y=1', {
+            fetch('/move?x=0&y=0', {
                 method: 'GET',
             })
             .then(response => response.json())
@@ -290,6 +290,8 @@
                 if (data['status'] === 'success'){
                     // Update the game log with the log of the game
                     document.getElementById('messageBoxContent').innerHTML = data['game_log'];
+                    // Update the checked status of the ai opponent check box
+                    document.getElementById('ai_opponent_checkbox').checked = (data['ai_opponent_toggle'] == "on") ? true : false;
                     // Update the board
                     board = data['board'];
                     // Reload the board

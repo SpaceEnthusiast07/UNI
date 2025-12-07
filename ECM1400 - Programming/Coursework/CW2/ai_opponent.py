@@ -1,23 +1,37 @@
 import numpy as np
 
+def numberOfFreeCells(board):
+    freeCellCounter = 0
+    for row in range(len(board[0])):
+        for column in range(len(board[0])):
+            if (board[row, column] == "None "): 
+                coord = (column+1, row+1)
+                freeCellCounter += 1
+    return (freeCellCounter, coord)
+
+
 def makeMove(board):
     # Since the ai is the other opponent, colour = "Light"
     colour = "Light"
-    # Initialise legalMove
-    legalMove = False
+    # Calculate the size of the board
+    size = len(board[0])
     # Initialise the list containing coord, flippedCounters pairs
     listOfMoves = []
 
-    for row in range(len(board[0])):
-        for column in range(len(board[0])):
+    # Determine how many free cells there are
+    freeCells = numberOfFreeCells(board)
+    if (freeCells[0] == 1):
+        # Automatically place the light counter here
+        return freeCells[1]
+
+    for row in range(size):
+        for column in range(size):
             # If cell contains "None ", check if a legal move is possible
             if (board[row, column] == "None "):
-                isLegalCell = legal_move(colour, (column, row), board, False)
+                isLegalCell = legal_move(colour, (column, row), board)
             
                 # If cell is legal
                 if (isLegalCell[0]):
-                    # Set legalMove to True
-                    legalMove = True
                     # Update the list of moves
                     listOfMoves.append(((column+1, row+1), isLegalCell[1]))
     
@@ -36,7 +50,7 @@ def makeMove(board):
     return bestCoord
 
 
-def legal_move(colour, coordinate, board, modifyBoard):
+def legal_move(colour, coordinate, board):
     # To access a cell in a 2D array, the row index is provided before the column index
     # This means that the y-axis is provided before the x-axis
     # Wrong: board[xCoord, yCoord] = board[cellToCheck[0], cellToCheck[1]]
@@ -54,7 +68,7 @@ def legal_move(colour, coordinate, board, modifyBoard):
     flippedCounters = 0
 
     # First, lets check whether a counter is already present at this location
-    if (board[coordinate[1], coordinate[0]] != "None "): return (False, -1)
+    if (board[coordinate[1], coordinate[0]] != "None "): return (False, 0)
     
     # Loop through each direction
     for direction in directions:
@@ -66,24 +80,19 @@ def legal_move(colour, coordinate, board, modifyBoard):
             # Check if the cell contains "None ", if not, a legal move is possible along this direction
             if (board[cellToCheck[1], cellToCheck[0]] != "None "):
                 # Analsye the first cell in this direction
-                result = analyse_cell(colour, cellToCheck, board, direction, size, modifyBoard)
-                # Check if this direction has resulted in an outflank, and we are allowed to modify the board
-                if (result[0] and modifyBoard): 
-                    legalDirection = True
-                    board[coordinate[1], coordinate[0]] = colour
-                # If we are not allowed to modify the board, but the direction is legal, set legalDirection to true
-                elif (result[0] == True and modifyBoard == False): 
+                result = analyse_cell(colour, cellToCheck, board, direction, size)
+
+                # Check if this direction has resulted in an outflank, state so and incremt the counter
+                if (result[0] == True): 
                     legalDirection = True
                     # Increment the fippedCounters counter
                     flippedCounters += result[1]
-
     
-    # Check if any direction has resulted in a legal move
     return (legalDirection, flippedCounters)
 
 
 # Function to analyse a cell to determine if the player can outflank the other
-def analyse_cell(colour, cellToCheck, board, direction, size, modifyBoard):
+def analyse_cell(colour, cellToCheck, board, direction, size):
     # Base Case: Check if we are outside the boundaries of the board
     if (cellToCheck[0] < 0 or cellToCheck[0] >= size or cellToCheck[1] < 0 or cellToCheck[1] >= size):
         # Since we have gone outside the boundaries of the board, this direction must not contain any other counters
@@ -99,14 +108,8 @@ def analyse_cell(colour, cellToCheck, board, direction, size, modifyBoard):
     # Otherwise, we must have reached the other player's colour
     else:
         # Since this cell contains the other player's colour, analyse the next cell along the current direction
-        result = analyse_cell(colour, cellToCheck + direction, board, direction, size, modifyBoard)
-        # If result[0] is true, that means player has outflanked the other player along this direction
-        if (result[0] and modifyBoard):
-            # Therefore, change this cell to the player's colour
-            board[cellToCheck[1], cellToCheck[0]] = colour
-            return (True, 1)
-        # If we are not allowed to modify the board, but this direction is still legal, return true
-        elif (result[0] == True and modifyBoard == False): return (True, 1)
-        else:
-            # Either direction is empty or player cannot outflank the other player in this direction
-            return (False, 0)
+        result = analyse_cell(colour, cellToCheck + direction, board, direction, size)
+        # If result[0] == true, this direction is legal, return true
+        if (result[0] == True): return (True, 1)
+        # Either direction is empty or player cannot outflank the other player in this direction
+        else: return (False, 0)

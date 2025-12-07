@@ -1,30 +1,24 @@
 from flask import Flask, render_template, request, Response, jsonify
 import components as comp
-import json
+import json, time
 import numpy as np
 import ai_opponent as aio
 
-# Allows the browser to automatically refresh when the webpage files are changed
-# Only activates when debug=True in the flask app
-from flask_livereload import LiveReload
-
 # Create a Flask app with this file as the main entry point
 app = Flask(__name__)
-
-# Initialise the liveloader
-livereload = LiveReload(app)
 
 
 # Function determines if any legal moves remain for a given player
 def any_legal_moves(colour, board):
     # Initialise legalMove
     legalMove = False
+    size = len(board[0])
 
-    for row in range(len(board[0])):
-        for column in range(len(board[0])):
-            # If cell contains "None ", check if a legal
+    for row in range(size):
+        for column in range(size):
+            # If cell contains "None ", check if a legal cell
             if (board[row, column] == "None "):
-                isLegalCell = comp.legal_move(colour, (column, row), board, False)
+                isLegalCell = comp.legal_move(colour, (column+1, row+1), board, False)
             
                 # If cell is legal, set legalMove to True
                 if (isLegalCell): legalMove = True
@@ -38,7 +32,7 @@ board = comp.initialise_board()
 # Initialise global game over tracker
 gameOver = False
 # Initialise the move counter
-moveCounter = 60
+moveCounter = 64
 # Set the starting player
 currentPlayer = "Dark "
 # Initialise the ai opponent toggle to false
@@ -57,11 +51,41 @@ def home_page():
     # Re-initialise the board, gameOver, moveCounter and currentPlayer
     board = comp.initialise_board()
     gameOver = False
-    moveCounter = 60
+    moveCounter = 64
     currentPlayer = "Dark "
     aiOpponentToggle = False
 
     return render_template("index.html", game_board=board.tolist())
+
+
+def determineWinner():
+    # Initialise player score counters
+    lightCounter = 0
+    darkCounter = 0
+    # Calculate the number of counters for the other player
+    for row in board:
+        for cell in row:
+            if (cell == "Dark "): darkCounter += 1
+            elif (cell == "Light"): lightCounter += 1
+    
+    # Determine who is the winner
+    if (darkCounter > lightCounter): winner = "Dark "
+    elif (darkCounter == lightCounter): winner = "draw"
+    else: winner = "Light"
+    
+    return {
+        'finished': True,
+        'scores': (lightCounter, darkCounter),
+        'winner': winner,
+        'board': board.tolist()
+    }
+
+
+def checkForEmptyCells():
+    for row in board:
+        for cell in row:
+            if (cell == "None "): return True
+    return False
 
 
 # Function that handles when a player makes a move
@@ -78,21 +102,46 @@ def move():
         xCoord = int(request.args['x'])
         yCoord = int(request.args['y'])
     else: return {'status': 'error'}
+    
+    # First check if there are any empty cells
+    if (not checkForEmptyCells()):
+        # Board is full, so set gameOver to true
+        gameOver = True
+        # Calculate the winner and retrun the results
+        return determineWinner()
 
     # If game is over, exit function
-    if (gameOver): return {'status': 'game_over'}
+    if (gameOver): return determineWinner()
 
     # Check if there are any moves left
-    if (moveCounter == 0):
+    if (moveCounter <= 0):
         gameOver = True
-        return {'status': 'game_over'}
+        return determineWinner()
     
-    # If the ai opponent is active, make that move
-    if (aiOpponentToggle and currentPlayer == "Light"):
-        print("AI player has reached this function!")
+    # If the ai opponent is active and it is its turn, get it to make a move
+    if (aiOpponentToggle == True and currentPlayer == "Light"):
+        # Delay so the other player can see where they placed their own counter
+        time.sleep(1)
+
         # Ask the ai which move it will make
         ai_move = aio.makeMove(board)
-        # Make the move
+
+        # Check if the ai could find a move
+        if ai_move == (-1, -1):
+            # The AI has no legal moves. Check if  dark has any moves.
+            if not any_legal_moves("Dark ", board):
+                # Neither player can move. Game Over.
+                gameOver = True
+                return determineWinner()
+            
+            # If dark can still move, pass the turn to them
+            currentPlayer = "Dark "
+            return {
+                'status': 'no_legal_moves',
+                'player': currentPlayer
+            }
+        
+        # AI can make a move, so make the move
         isLegalMove = comp.legal_move(currentPlayer, ai_move, board, True)
         if (not isLegalMove): 
             # Inform the player that this is not a legal move
@@ -101,40 +150,14 @@ def move():
                 'message': 'illegal move'
             }
         
-        otherPlayerCounter = 0
-        # Set the other player
-        otherPlayer = "Dark "
-        # Initialise player score counters
-        lightCounter = 0
-        darkCounter = 0
-        # Calculate the number of counters for the other player
-        for row in board:
-            for cell in row:
-                if (cell == otherPlayer): otherPlayerCounter += 1
-                if (cell == "Dark "): darkCounter += 1
-                if (cell == "Light"): lightCounter += 1
-        
-        # Determine who is the winner
-        if (darkCounter > lightCounter): winner = "Dark"
-        else: winner = "Light"
-        
-        # If none of the other player's counters are present, game is over
-        if (otherPlayerCounter == 0):
-            gameOver = True
-            return {
-                'finished': True,
-                'scores': (lightCounter, darkCounter),
-                'winner': winner,
-                'board': board.tolist()
-            }
+        # Check if there are any free spaces
+        if (not checkForEmptyCells()): return determineWinner()
         
         # Otherwise, switch to other player
         currentPlayer = "Dark "
 
         # Decrement the move counter
         moveCounter -= 1
-
-        print(board)
         
         # Return the success status and the new state of the board
         return {
@@ -152,28 +175,8 @@ def move():
             # Check whether either player can make a move
             if (not any_legal_moves(otherPlayer, board)):
                 # Therefore, game is over
-                # Initialise player score counters
-                lightCounter = 0
-                darkCounter = 0
-
-                # Calculate the number of counters for each player
-                for row in board:
-                    for cell in row:
-                        if (cell == "Dark "): darkCounter += 1
-                        elif (cell == "Light"): lightCounter += 1
-                
-                # Determine who is the winner
-                if (darkCounter > lightCounter): winner = "Dark"
-                else: winner = "Light"
-                
                 gameOver = True
-                # Return finished=True and player scores
-                return {
-                    'finished': True,
-                    'scores': (lightCounter, darkCounter),
-                    'winner': winner,
-                    'board': board.tolist()
-                }
+                return determineWinner()
 
             previousPlayer = currentPlayer
             
@@ -196,35 +199,10 @@ def move():
                 'message': 'illegal move'
             }
         
-        otherPlayerCounter = 0
-        # Determine the other player
-        if (currentPlayer == "Dark "): otherPlayer = "Light"
-        else: otherPlayer = "Dark "
-        # Initialise player score counters
-        lightCounter = 0
-        darkCounter = 0
-        # Calculate the number of counters for the other player
-        for row in board:
-            for cell in row:
-                if (cell == otherPlayer): otherPlayerCounter += 1
-                if (cell == "Dark "): darkCounter += 1
-                if (cell == "Light"): lightCounter += 1
+        # Check if there are any free spaces
+        if (not checkForEmptyCells()): return determineWinner()
         
-        # Determine who is the winner
-        if (darkCounter > lightCounter): winner = "Dark"
-        else: winner = "Light"
-        
-        # If none of the other player's counters are present, game is over
-        if (otherPlayerCounter == 0):
-            gameOver = True
-            return {
-                'finished': True,
-                'scores': (lightCounter, darkCounter),
-                'winner': winner,
-                'board': board.tolist()
-            }
-        
-        # Switch to other player
+        # Otherwise, switch to other player
         if (currentPlayer == "Dark "): currentPlayer = "Light"
         else: currentPlayer = "Dark "
 
@@ -248,7 +226,8 @@ def saveGameBoard():
         'game_over': gameOver,
         'move_counter': moveCounter,
         'current_player': currentPlayer,
-        'game_log': request.get_data(as_text=True)
+        'game_log': request.get_data(as_text=True),
+        'ai_opponent_toggle': "on" if aiOpponentToggle == True else "off"
     }
 
     # Convert the python dictionary to a json string
@@ -274,6 +253,7 @@ def loadGameBoard():
     global moveCounter
     global currentPlayer
     global gameOver
+    global aiOpponentToggle
 
     # Extract the file from the request
     sentFile = request.files.get('file')
@@ -296,13 +276,15 @@ def loadGameBoard():
     moveCounter = gameBoardFile['move_counter']
     currentPlayer = gameBoardFile['current_player']
     gameLog = gameBoardFile['game_log']
+    aiOpponentToggle = True if gameBoardFile['ai_opponent_toggle'] == "on" else False
 
     # Return success status and new board state
     return {
         'status': 'success',
         'board': board.tolist(),
         'current_player': currentPlayer,
-        'game_log': gameLog
+        'game_log': gameLog,
+        'ai_opponent_toggle': aiOpponentToggle
     }
 
 
@@ -319,7 +301,7 @@ def resetBoard():
     board = comp.initialise_board()
 
     # Reset the move counter
-    moveCounter = 60
+    moveCounter = 64
 
     # Change the current player back to Dark
     currentPlayer = "Dark "
@@ -359,6 +341,6 @@ def toggleAIOpponent():
 if __name__ == "__main__":
     # Start the local web server
     # When in debug mode, any change to the python files 
-    # will cause an automatic server
-    app.run(debug=True)
+    # will cause an automatic server reboot
+    app.run()
 
