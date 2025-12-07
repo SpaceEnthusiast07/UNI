@@ -56,26 +56,25 @@
             background: #fff;
             border: 1px solid #222;
         }
-        #messageBox{
-            display: flex; /* Make it a flex container to align its own children */
-            flex-direction: column; /* Stack log items vertically */
-            width: 300px; /* Use a fixed width for the log box for predictable size */
-            /* Log Box Styling */
+        #messageBox {
+            display: flex;
+            flex-direction: column;
+            width: 300px;
             border: 1px solid black; 
             padding: 20px; 
             border-radius: 15px;
-            /* Flexbox Property for height matching */
-            align-self: stretch; /* This forces it to match the height of the board_grid */
-            /* Log specific properties */
-            overflow-y: auto; 
-            /* The height: 10em; and line-height: 1em; were making it too small. Remove them. */
+            align-self: stretch; 
+            overflow-y: auto;
             margin: 10px 10px 10px 0;
+        }
+        #messageBoxContent {
+            overflow-y: auto;
         }
         #game_area {
             display: flex;
-            justify-content: center; /* Horizontally center the board/log group */
-            align-items: center; /* Vertically center the board/log group in the viewport */
-            height: 70vh; /* Set the height of the entire game area */
+            justify-content: center;
+            align-items: center;
+            height: 70vh;
         }
         #utility_buttons {
             display: flex;
@@ -114,6 +113,13 @@
             background-color: #228B22;
             color: white;
         }
+        #ai_opponent_div {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            margin: 16px 0 0 0;
+        }
     </style>
     <script>
         //Get the board that is passed from the python flask code
@@ -129,6 +135,27 @@
         // Change the height of the game log div to match the board's height
         //document.getElementById('messageBox').style.height = document.getElementById('board_grid').style.height;
 
+        function sendAIMove() {
+            fetch('/move?x=1&y=1', {
+                method: 'GET',
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Process the response
+                if (data['status'] === 'success'){
+                    updateMessageBox('AI has made a move.<br>');
+                    updateMessageBox("It's " + data['player'] + "'s turn.");
+                    //Update the board
+                    board = data['board'];
+                    //Reload the board
+                    loadBoard();
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
+
         function sendMove(x, y, url) {
             /**
             * do a GET request to the server with the x and y coordinates for the move
@@ -143,11 +170,18 @@
                 // Process the response
                 if (data['status'] === 'success'){
                     updateMessageBox('Valid move at (' + x + ', ' + y + ')<br>');
-                    updateMessageBox("It's " + data['player'] + "'s turn.");
                     //Update the board
                     board = data['board'];
                     //Reload the board
                     loadBoard();
+                    // Check if the AI is playing
+                    if (document.getElementById("ai_opponent_checkbox").checked && data['player'] === "Light") {
+                        updateMessageBox("It's the AI's turn.");
+                        sendAIMove()
+                    }
+                    else {
+                        updateMessageBox("It's " + data['player'] + "'s turn.");
+                    }
                 }
                 
                 else if (data['status'] === 'fail'){
@@ -195,14 +229,13 @@
         }
 
         function updateMessageBox(message) {
-            let messageBox = document.getElementById('messageBox');
+            //let messageBox = document.getElementById('messageBox');
             let messageBoxContent = document.getElementById('messageBoxContent');
             messageBoxContent.innerHTML += message + '<br>';
-            messageBox.scrollTop = messageBox.scrollHeight; // Auto-scroll to the bottom
+            messageBoxContent.scrollTop = messageBoxContent.scrollHeight; // Auto-scroll to the bottom
         }
 
         function saveGameBoard(url) {
-            //window.location.href = url;
             // Formulate a new response object
             fetch(url, {
                 method: "POST",
@@ -301,6 +334,28 @@
                 console.error('Error:', error);
             });
         }
+
+        function toggleAIOpponent() {
+            // Formulate a new response object
+            fetch("/toggle_ai_opponent", {
+                method: "POST",
+                headers: {"Content-Type": "text/plain"},
+                body: document.getElementById('ai_opponent_checkbox').checked
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Check if the toggle was not a success
+                if (data['status'] === 'fail'){
+                    // Revert the checkbox state
+                    document.getElementById('ai_opponent_checkbox').checked = false
+                    // Inform the user that the ai opponent was not activated
+                    alert("AI Opponent not activated!")
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
     </script>
 </head>
 <body>
@@ -324,7 +379,11 @@
         </div>
         <div id="messageBox">
             <h2 id="messageBoxTitle" style="margin: 0 0 10px 0;">Game Log</h2>
-            <p id="messageBoxContent"></p>
+            <p id="messageBoxContent" style="border-top: 1px solid black; border-bottom: 1px solid black; margin: 0; padding: 16px 0 16px 0; flex-grow: 1;"></p>
+            <div id="ai_opponent_div">
+                <input id="ai_opponent_checkbox" type="checkbox" onchange="toggleAIOpponent()">
+                <label id="ai_opponent_lbl" for="ai_opponent_checkbox">AI Opponent</label>
+            </div>
         </div>
     </div>
 
