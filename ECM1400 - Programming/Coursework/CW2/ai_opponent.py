@@ -1,14 +1,5 @@
 import numpy as np
 
-def numberOfFreeCells(board):
-    freeCellCounter = 0
-    for row in range(len(board[0])):
-        for column in range(len(board[0])):
-            if (board[row, column] == "None "): 
-                coord = (column+1, row+1)
-                freeCellCounter += 1
-    return (freeCellCounter, coord)
-
 
 def makeMove(board):
     # Since the ai is the other opponent, colour = "Light"
@@ -18,33 +9,28 @@ def makeMove(board):
     # Initialise the list containing coord, flippedCounters pairs
     listOfMoves = []
 
-    # Determine how many free cells there are
-    freeCells = numberOfFreeCells(board)
-    if (freeCells[0] == 1):
-        # Automatically place the light counter here
-        return freeCells[1]
-
+    # Loop through each cell in the board
     for row in range(size):
         for column in range(size):
             # If cell contains "None ", check if a legal move is possible
             if (board[row, column] == "None "):
                 isLegalCell = legal_move(colour, (column, row), board)
             
-                # If cell is legal
-                if (isLegalCell[0]):
+                # Check if this cell results in a legal move
+                if (isLegalCell[0] == True):
                     # Update the list of moves
                     listOfMoves.append(((column+1, row+1), isLegalCell[1]))
     
     # Sort listOfMoves into descending order
     listOfMoves_sorted = sorted(listOfMoves, key=lambda x: x[1], reverse=True)
-
+    
     # So that the human player has a chance, i will always choose the second best place for the light counter
-    if (len(listOfMoves_sorted) >= 2):
-        bestCoord = listOfMoves_sorted[1][0]
-    elif (len(listOfMoves_sorted) == 0):
-        bestCoord = (-1,-1)
-    else:
+    if (len(listOfMoves_sorted) == 1):
         bestCoord = listOfMoves_sorted[0][0]
+    elif (len(listOfMoves_sorted) > 1):
+        bestCoord = listOfMoves_sorted[1][0]
+    else:
+        bestCoord = (-1,-1)
     
     # Return whether the player can make a legal move
     return bestCoord
@@ -82,7 +68,7 @@ def legal_move(colour, coordinate, board):
                 # Analsye the first cell in this direction
                 result = analyse_cell(colour, cellToCheck, board, direction, size)
 
-                # Check if this direction has resulted in an outflank, state so and incremt the counter
+                # Check if this direction has resulted in an outflank, state so and increment the counter
                 if (result[0] == True): 
                     legalDirection = True
                     # Increment the fippedCounters counter

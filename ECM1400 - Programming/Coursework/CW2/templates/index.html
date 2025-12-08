@@ -136,75 +136,142 @@
         //document.getElementById('messageBox').style.height = document.getElementById('board_grid').style.height;
 
         function sendAIMove() {
+            // Send dummy coordinates to the server, indictaing that the AI is going to make a move
             fetch('/move?x=0&y=0', {
                 method: 'GET',
             })
             .then(response => response.json())
             .then(data => {
                 // Process the response
-                if (data['status'] === 'success'){
-                    updateMessageBox('AI has made a move.<br>');
-                    updateMessageBox("It's " + data['player'] + "'s turn.");
-                    //Update the board
+                if (data['status'] === 'success') {
+                    // Indictae that the AI has made a move and where this move was
+                    updateMessageBox('AI has placed a counter at (' + data['ai_coordinate'][0] + ', ' + data['ai_coordinate'][1] + ').<br>');
+                    // Indicate that it is the next player's turn
+                    updateMessageBox("It's " + data['next_player'] + "'s turn.");
+                    // Update the board
                     board = data['board'];
-                    //Reload the board
+                    // Reload the board
+                    loadBoard();
+                }
+                // If the ai move fails, indicate so
+                else if (data['status'] === 'fail') {
+                    // Indicate that the ai has failed to make a move
+                    updateMessageBox('AI was unable to make a move.<br>');
+                    // Indicate that it is the other player's turn
+                    updateMessageBox("It's " + data['next_player'] + "'s turn.");
+                }
+
+                // Deals with the case where the game has ended
+                else if (data['finished'] === true){
+                    // Therefore, game is finished
+                    // Set the title to game over
+                    document.getElementById('messageBoxTitle').innerHTML = 'Game Over';
+                    // Display the scores
+                    document.getElementById('messageBoxContent').innerHTML = 'Dark scored ' + data['scores'][1] + ' points<br>AI scored ' + data['scores'][0] + ' points<br><br>';
+                    // If the game has resulted in a draw, indicate so
+                    if (data['winner'] === "draw") {
+                        document.getElementById('messageBoxContent').innerHTML += 'It is a draw';
+                    }
+                    // Otherwise, indicate who is the winner
+                    else if (data['winner'] === "Light") {
+                        document.getElementById('messageBoxContent').innerHTML += 'AI is the winner!';
+                    }
+                    else {document.getElementById('messageBoxContent').innerHTML += data['winner'] + ' is the winner!';}
+                    // Update the board
+                    board = data['board'];
+                    // Reload the board
                     loadBoard();
                 }
             })
+            // Deals with if an error occurs
             .catch((error) => {
                 console.error('Error:', error);
             });
         }
 
         function sendMove(x, y, url) {
-            /**
-            * do a GET request to the server with the x and y coordinates for the move
-            * The server will respond with a JSON object containing whether the move was legal
-            */
+            // Perform a GET request to the server with the x and y coordinates for the move
+            // The server will respond with a JSON object containing whether the move was legal
 
+            // Send the coordinates to the server
             fetch(url+'?x='+x+'&y='+y, {
                 method: 'GET',
             })
             .then(response => response.json())
             .then(data => {
-                // Process the response
+                // Deal with the case where the move was valid
                 if (data['status'] === 'success'){
+                    // Indicate that the move was valid
                     updateMessageBox('Valid move at (' + x + ', ' + y + ')<br>');
-                    //Update the board
-                    board = data['board'];
-                    //Reload the board
-                    loadBoard();
-                    // Check if the AI is playing
-                    if (document.getElementById("ai_opponent_checkbox").checked && data['player'] === "Light") {
-                        updateMessageBox("It's the AI's turn.");
-                        sendAIMove()
-                    }
-                    else {
-                        updateMessageBox("It's " + data['player'] + "'s turn.");
-                    }
-                }
-                
-                else if (data['status'] === 'fail'){
-                    updateMessageBox('Illegal move at (' + x + ', ' + y + ')');
-                }
-                
-                else if (data['status'] === 'no_legal_moves'){
-                    updateMessageBox('No legal moves available for ' + data['player'] + '<br>');
-                    if (data['player'] === 'Dark '){updateMessageBox("It's Lights's turn.");}
-                    else{updateMessageBox("It's Darks's turn.");}
-                }
-                
-                else if (data['finished']){
-                    // Game is finished
                     // Update the board
                     board = data['board'];
                     // Reload the board
-                    loadBoard();        
+                    loadBoard();
+
+                    // First, check if the data says the other player cannot make any legal moves
+                    if (data['legal_moves_available_for_other_player'] === false) {
+                        // Indicate that it is the other players turn
+                        updateMessageBox("It's " + data['other_player'] + "'s turn.")
+                        // Inform them that they have no legal moves available
+                        updateMessageBox("No legal moves available for " + data['other_player'])
+                        // Indicate that it is the current player's turn again, other player has skipped
+                        updateMessageBox("It's " + data['current_player'] + "'s turn.")
+                    }
+                    else {
+                        // Check if the AI is playing and it is the AI's turn
+                        if (document.getElementById("ai_opponent_checkbox").checked && data['next_player'] === "Light") {
+                            // Indicate that it is the AI's turn
+                            updateMessageBox("It's the AI's turn.");
+                            // Process the AI's move
+                            sendAIMove()
+                        }
+                        // Otherwise, AI opponent is disabled
+                        else {
+                            updateMessageBox("It's " + data['next_player'] + "'s turn.");
+                        }
+                    }
+                }
+                
+                // Deal with the case where the move has failed
+                else if (data['status'] === 'fail'){
+                    // Indicate that an illegal move was made and provide the coordinates
+                    updateMessageBox('Illegal move at (' + x + ', ' + y + ')');
+                }
+                
+                // Deal with the case where the other player has no available legal moves
+                else if (data['status'] === 'no_legal_moves'){
+                    // Inform the user that they do not have any legal moves
+                    updateMessageBox("It's " + data['other_player'] + "'s turn.")
+                    updateMessageBox('No legal moves available for ' + data['other_player'] + '<br>');
+
+                    // Logic to switch to other player, taking into consideration if the AI opponent is enabled
+                    if (data['current_player'] === 'Light') {
+                        if (document.getElementById("ai_opponent_checkbox").checked === true) {updateMessageBox("It's the AI's turn.");}
+                        else {updateMessageBox("It's Lights's turn.");}
+                    }
+                    else {updateMessageBox("It's Darks's turn.");}
+                }
+                
+                // Deals with the case where the game has ended
+                else if (data['finished'] === true){
+                    // Therefore, game is finished
+                    // Set the title to game over
                     document.getElementById('messageBoxTitle').innerHTML = 'Game Over';
-                    document.getElementById('messageBoxContent').innerHTML = 'Dark scored ' + data['scores'][1] + ' points<br>Light scored ' + data['scores'][0] + ' points<br><br>' + 
-                    data['winner'] + ' is the winner!';
+                    // Display the scores
+                    document.getElementById('messageBoxContent').innerHTML = 'Dark scored ' + data['scores'][1] + ' points<br>Light scored ' + data['scores'][0] + ' points<br><br>';
+                    // If the game has resulted in a draw, indicate so
+                    if (data['winner'] === "draw") {
+                        document.getElementById('messageBoxContent').innerHTML += 'It is a draw';
+                    }
+                    // Otherwise, indicate who is the winner
+                    else {document.getElementById('messageBoxContent').innerHTML += data['winner'] + ' is the winner!';}
+                    // Update the board
+                    board = data['board'];
+                    // Reload the board
+                    loadBoard();
                 }
             })
+            // If an error occurs, display it in the console
             .catch((error) => {
                 console.error('Error:', error);
             });
@@ -288,10 +355,11 @@
             .then(data => {
                 // Process the response
                 if (data['status'] === 'success'){
+                    if (data['game_over'] === true) {document.getElementById('messageBoxTitle').innerHTML = "Game Over"}
                     // Update the game log with the log of the game
                     document.getElementById('messageBoxContent').innerHTML = data['game_log'];
                     // Update the checked status of the ai opponent check box
-                    document.getElementById('ai_opponent_checkbox').checked = (data['ai_opponent_toggle'] == "on") ? true : false;
+                    document.getElementById('ai_opponent_checkbox').checked = data['ai_opponent_toggle'];
                     // Update the board
                     board = data['board'];
                     // Reload the board
@@ -322,6 +390,10 @@
                     // Reset the game log box
                     document.getElementById('messageBoxTitle').innerHTML = 'Game Log';
                     document.getElementById('messageBoxContent').innerHTML = "It's Dark's turn. <br>";
+                    // Reset the checkbox checked state
+                    document.getElementById('ai_opponent_checkbox').checked = false;
+                    // Call the toggleAIOpponent to tell the server that the AI opponent is now disabled
+                    toggleAIOpponent()
                     // Update the board
                     board = data['board'];
                     // Reload the board
@@ -369,7 +441,7 @@
         <div id="board_grid" class="board_grid">
             {% for i in range(game_board|length) %}
                 {% for j in range(game_board|length) %}
-                    <div class="cell" id = "cell-{{ j }}-{{ i }}" onclick="sendMove({{ j+1 }}, {{ i+1 }}, '/move')">
+                    <div class="cell" id="cell-{{ j }}-{{ i }}" onclick="sendMove({{ j+1 }}, {{ i+1 }}, '/move')">
                         {% if game_board[i][j] == 'Dark ' %}
                             <div class="piece black"></div>
                         {% elif game_board[i][j] == 'Light' %}

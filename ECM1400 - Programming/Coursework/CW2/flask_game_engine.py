@@ -37,6 +37,8 @@ moveCounter = 64
 currentPlayer = "Dark "
 # Initialise the ai opponent toggle to false
 aiOpponentToggle = False
+# Initialise ai_move dummy value
+ai_move = (0,0)
 
 
 # Decorator that tells Flask to run this func when '/' is visited
@@ -88,6 +90,13 @@ def checkForEmptyCells():
     return False
 
 
+def checkForOtherPlayersColour(colour):
+    for row in board:
+        for cell in row:
+            if (cell == colour): True
+    return False
+
+
 # Function that handles when a player makes a move
 @app.route('/move', methods=['GET'])
 def move():
@@ -96,6 +105,7 @@ def move():
     global currentPlayer
     global moveCounter
     global gameOver
+    global ai_move
 
     # Ensure this function can deal with the GET method
     if request.method == 'GET':
@@ -103,118 +113,91 @@ def move():
         yCoord = int(request.args['y'])
     else: return {'status': 'error'}
     
-    # First check if there are any empty cells
-    if (not checkForEmptyCells()):
+    # First check if there are any empty cells, the game is over or there are any moves left
+    if ((not checkForEmptyCells()) or (gameOver == True) or (moveCounter <= 0)):
         # Board is full, so set gameOver to true
         gameOver = True
         # Calculate the winner and retrun the results
         return determineWinner()
+    
+    # Check if the AI opponent is enabled and it is the AI's turn
+    if ((aiOpponentToggle == True) and (currentPlayer == "Light")):
+        # This delay is used to allow time for the human player to read the board's state once they have placed their counter
+        time.sleep(0.8)
+        # Get the AI to make a move
+        ai_move = aio.makeMove(board)
 
-    # If game is over, exit function
-    if (gameOver): return determineWinner()
-
-    # Check if there are any moves left
-    if (moveCounter <= 0):
+        # Check that the AI could make a move
+        if (ai_move == (-1,-1)):
+            # AI decided that it couldn't make a move
+            # Switch players
+            currentPlayer = "Dark "
+            return {
+                'status': 'fail',
+                'next_player': currentPlayer
+            }
+        
+        # Otherwise, extract the ai_move coordinates and assign them to the x and y coords
+        xCoord = ai_move[0]
+        yCoord = ai_move[1]
+    
+    # Make the move
+    isLegalMove = comp.legal_move(currentPlayer, (xCoord, yCoord), board, True)
+    # Check if the chosen move is legal
+    if (isLegalMove == False): 
+        return {
+            'status': 'fail'
+        }
+    
+    # Check if there are any free cells on the board after this move was made
+    # If no free cells are present, game is over - since no one will be able to place a counter
+    if (checkForEmptyCells() == False):
         gameOver = True
         return determineWinner()
     
-    # If the ai opponent is active and it is its turn, get it to make a move
-    if (aiOpponentToggle == True and currentPlayer == "Light"):
-        # Delay so the other player can see where they placed their own counter
-        time.sleep(1)
+    # Determine the other player
+    if (currentPlayer == "Dark "): otherPlayer = "Light"
+    else: otherPlayer = "Dark "
+    
+    # Now check if the other player can make a move
+    if (any_legal_moves(otherPlayer, board) == False):
+        # Check if the current player can make a move
+        if (any_legal_moves(currentPlayer, board) == False):
+            # Therefore, game is over
+            gameOver = True
+            # Calculate and return the winner
+            return determineWinner()
+        
+        # Otherwise, other player cannot make a move but the current player can
+        # However, if no counter of the other player's colour is present on the board, the game is still over
+        if (checkForOtherPlayersColour(otherPlayer) == False): return determineWinner()
 
-        # Ask the ai which move it will make
-        ai_move = aio.makeMove(board)
-
-        # Check if the ai could find a move
-        if ai_move == (-1, -1):
-            # The AI has no legal moves. Check if  dark has any moves.
-            if not any_legal_moves("Dark ", board):
-                # Neither player can move. Game Over.
-                gameOver = True
-                return determineWinner()
-            
-            # If dark can still move, pass the turn to them
-            currentPlayer = "Dark "
-            return {
-                'status': 'no_legal_moves',
-                'player': currentPlayer
-            }
-        
-        # AI can make a move, so make the move
-        isLegalMove = comp.legal_move(currentPlayer, ai_move, board, True)
-        if (not isLegalMove): 
-            # Inform the player that this is not a legal move
-            return {
-                'status': 'fail',
-                'message': 'illegal move'
-            }
-        
-        # Check if there are any free spaces
-        if (not checkForEmptyCells()): return determineWinner()
-        
-        # Otherwise, switch to other player
-        currentPlayer = "Dark "
-
-        # Decrement the move counter
-        moveCounter -= 1
-        
-        # Return the success status and the new state of the board
+        # If counters are present of the other player's colour, then the game can continue
+        # Return the status that the other player cannot make any legal moves, but the current one can
+        # effectively skipping the other player's turn
         return {
             'status': 'success',
             'board': board.tolist(),
-            'player': currentPlayer
+            'current_player': currentPlayer,
+            'other_player': otherPlayer,
+            'ai_coordinate': ai_move,
+            'legal_moves_available_for_other_player': False
         }
-    else:
-        # Check if there are any legal moves available for the current player
-        if (not any_legal_moves(currentPlayer, board)):
-            # Determine the other player
-            if (currentPlayer == "Dark "): otherPlayer = "Light"
-            else: otherPlayer = "Dark "
+    
+    # Finally, if there are free cells left and the other player can make a move
+    # Switch players and continue as normal
+    if (currentPlayer == "Dark "): currentPlayer = "Light"
+    else: currentPlayer = "Dark "
 
-            # Check whether either player can make a move
-            if (not any_legal_moves(otherPlayer, board)):
-                # Therefore, game is over
-                gameOver = True
-                return determineWinner()
+    # Return the new state of the board and the next player
+    return {
+        'status': 'success',
+        'board': board.tolist(),
+        'next_player': currentPlayer,
+        'ai_coordinate': ai_move,
+        'legal_moves_available_for_other_player': True
+    }
 
-            previousPlayer = currentPlayer
-            
-            # Switch to other player
-            if (currentPlayer == "Dark "): currentPlayer = "Light"
-            else: currentPlayer = "Dark "
-
-            # Return status=no_legal_moves
-            return {
-                'status': 'no_legal_moves',
-                'player': previousPlayer
-            }
-
-        # Check whether the move is legal
-        isLegalMove = comp.legal_move(currentPlayer, (xCoord, yCoord), board, True)
-        if (not isLegalMove): 
-            # Inform the player that this is not a legal move
-            return {
-                'status': 'fail',
-                'message': 'illegal move'
-            }
-        
-        # Check if there are any free spaces
-        if (not checkForEmptyCells()): return determineWinner()
-        
-        # Otherwise, switch to other player
-        if (currentPlayer == "Dark "): currentPlayer = "Light"
-        else: currentPlayer = "Dark "
-
-        # Decrement the move counter
-        moveCounter -= 1
-        
-        # Return the success status and the new state of the board
-        return {
-            'status': 'success',
-            'board': board.tolist(),
-            'player': currentPlayer
-        }
 
 
 # Function that allows the user to save the state of the game to their computer
@@ -283,6 +266,7 @@ def loadGameBoard():
         'status': 'success',
         'board': board.tolist(),
         'current_player': currentPlayer,
+        'game_over': gameOver,
         'game_log': gameLog,
         'ai_opponent_toggle': aiOpponentToggle
     }
@@ -320,7 +304,7 @@ def resetBoard():
 
 @app.route("/toggle_ai_opponent", methods=['POST'])
 def toggleAIOpponent():
-    # Ensure this function access the global variables
+    # Ensure this function accesses the global variable
     global aiOpponentToggle
 
     try:
