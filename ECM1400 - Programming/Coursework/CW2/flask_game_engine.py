@@ -3,8 +3,8 @@
 import json
 from time import sleep
 from flask import Flask, render_template, request, Response
-import components as comp
 import numpy as np
+import components as comp
 import ai_opponent as aio
 
 # Create a Flask app with this file as the main entry point
@@ -192,9 +192,9 @@ def move() -> dict:
         other_player = "Dark "
 
     # Now check if the other player can make a move
-    if any_legal_moves(other_player, board) is False:
+    if any_legal_moves(other_player, game_state['board']) is False:
         # Check if the current player can make a move
-        if any_legal_moves(game_state['current_player'], board) is False:
+        if any_legal_moves(game_state['current_player'], game_state['board']) is False:
             # Therefore, game is over
             game_state['game_over'] = True
             # Calculate and return the winner
@@ -326,50 +326,66 @@ def load_user_saved_game_state_bytes() -> dict:
 
 # Function that resets the board, ready for a new game
 @app.route('/reset_board')
-def resetBoard():
-    # Ensure python accesses the global variables
-    global board
-    global move_counter
-    global current_player
-    global game_over
+def reset_board() -> dict:
+    """Resets the board and other game state variables."""
+
+    # Load the current game_state
+    game_state = load_game_state_from_file()
 
     # First initialise a new board
-    board = comp.initialise_board()
+    game_state['board'] = comp.initialise_board()
 
     # Reset the move counter
-    move_counter = 64
+    game_state['move_counter'] = 60
 
     # Change the current player back to Dark
-    current_player = "Dark "
+    game_state['current_player'] = "Dark "
 
     # Set game over to false
-    game_over = False
+    game_state['game_over'] = False
+
+    # Save the new game state to file
+    if save_game_state_to_file(game_state) is False:
+        # TODO: Log error to log file
+        print(" === Error: Unable to save game state once reset board.")
 
     # Return success status and the new board
     return {
         'status': 'success',
-        'board': board.tolist(),
-        'current_player': current_player
+        'board': game_state['board'].tolist(),
+        'current_player': game_state['current_player']
     }
 
 
 @app.route("/toggle_ai_opponent", methods=['POST'])
-def toggleAIOpponent():
-    # Ensure this function accesses the global variable
-    global ai_opponent_toggle
+def toggle_ai_opponent() -> dict:
+    """Allows the user to enable and disable the AI opponent."""
+
+    # Load the current game state
+    game_state = load_game_state_from_file()
 
     try:
         # Retrieve the new value of the toggle
-        toggleValue = request.get_data(as_text=True)
+        user_checkbox_checked_state = request.get_data(as_text=True)
 
         # Change the global value accordingly
-        if (toggleValue == "true"): ai_opponent_toggle = True
-        else: ai_opponent_toggle = False
+        if user_checkbox_checked_state == "true":
+            game_state['ai_opponent_toggle'] = True
+        else:
+            game_state['ai_opponent_toggle'] = False
+
+        # Save the new game state to file
+        if save_game_state_to_file(game_state) is False:
+            # TODO: Log error to log file
+            print(" === Error: Unable to save game state when toggling the AI opponent.")
 
         # Return status
         return {'status': 'success'}
-    except:
-        return {'status': 'fail'}
+    except Exception as e:
+        return {
+            'status': 'fail',
+            'error_message': e
+        }
 
 
 # Only run the app if the current file is being run directly
