@@ -11,8 +11,8 @@ import ai_opponent as aio
 app = Flask(__name__)
 
 
-def any_legal_moves(colour: str) -> bool:
-    """Given a player's colour, determine if any legal moves remain"""
+def any_legal_moves(colour: str, board: list[list[str]]) -> bool:
+    """Given a player's colour, determine if any legal moves remain."""
     # Initialise legalMove
     legal_move = False
     size = len(board[0])
@@ -31,7 +31,7 @@ def any_legal_moves(colour: str) -> bool:
     return legal_move
 
 
-def save_game_state_to_file(current_game_state: {list[list[str]],bool,int,str,str,bool}) -> bool:
+def save_game_state_to_file(current_game_state: dict) -> bool:
     """Takes a Python dictionary representing the current 
     games state and saves it to a JSON game state file."""
 
@@ -67,9 +67,9 @@ def home_page():
     return render_template("index.html", game_board=board)
 
 
-def determine_winner(board: list[list[str]]):
+def determine_winner(board: list[list[str]]) -> dict:
     """Counts the number of counters of each colour. 
-    Calculates which colour is the winner, or if it is a draw."""
+    Then, calculates which colour is the winner, or if it is a draw."""
 
     # Initialise player score counters
     light_counter = 0
@@ -99,7 +99,7 @@ def determine_winner(board: list[list[str]]):
     }
 
 
-def check_for_empty_cells(board: list[list[str]]):
+def check_for_empty_cells(board: list[list[str]]) -> bool:
     """Searches through the board and returns True if 
     the board contains at least one empty cell, otherwise it returns False."""
 
@@ -111,18 +111,22 @@ def check_for_empty_cells(board: list[list[str]]):
     return False
 
 
-def checkForOtherPlayersColour(colour):
+def check_for_other_players_colour(colour: str, board: list[list[str]]) -> bool:
+    """Searches the board for a counter of the specified colour.\n
+    Returns True if at least one counter of the specified colour
+    is present, otheriwse it returns False."""
+
     for row in board:
         for cell in row:
-            if (cell == colour): True
+            if cell == colour:
+                return True
     return False
 
 
-# Function that handles when a player makes a move
 @app.route('/move', methods=['GET'])
-def move():
+def move() -> dict:
     """Deals with verifying and making a move."""
-    
+
     # Load the game state
     game_state = load_game_state_from_file()
 
@@ -132,162 +136,191 @@ def move():
         y_coord = int(request.args['y'])
     else:
         return {'status': 'error'}
-    
+
     # First check if there are any empty cells, the game is over or there are any moves left
-    if ((not check_for_empty_cells()) or (game_over == True) or (move_counter <= 0)):
+    if (check_for_empty_cells(game_state['board']) is False
+            or game_state['game_over'] is True
+            or game_state['move_counter'] <= 0):
+
         # Board is full, so set game_over to true
-        game_over = True
+        game_state['game_over'] = True
         # Calculate the winner and retrun the results
-        return determine_winner()
-    
+        return determine_winner(game_state['board'])
+
     # Check if the AI opponent is enabled and it is the AI's turn
-    if ((ai_opponent_toggle == True) and (current_player == "Light")):
-        # This delay is used to allow time for the human player to read the board's state once they have placed their counter
+    if game_state['ai_opponent_toggle'] is True and game_state['current_player'] == "Light":
+        # This delay is used to allow time for the human player
+        # to read the board's state once they have placed their counter
         sleep(0.8)
+
         # Get the AI to make a move
-        ai_move = aio.makeMove(board)
+        ai_move = aio.makeMove(game_state['board'])
 
         # Check that the AI could make a move
-        if (ai_move == (-1,-1)):
+        if ai_move == (-1,-1):
             # AI decided that it couldn't make a move
             # Switch players
-            current_player = "Dark "
+            game_state['current_player'] = "Dark "
             return {
                 'status': 'fail',
-                'next_player': current_player
+                'next_player': game_state['current_player']
             }
-        
+
         # Otherwise, extract the ai_move coordinates and assign them to the x and y coords
         x_coord = ai_move[0]
         y_coord = ai_move[1]
-    
+
     # Make the move
-    isLegalMove = comp.legal_move(current_player, (x_coord, y_coord), board, True)
+    is_legal_move = comp.legal_move(game_state['current_player'],
+                                    (x_coord, y_coord),
+                                    game_state['board'], True)
+
     # Check if the chosen move is legal
-    if (isLegalMove == False): 
-        return {
-            'status': 'fail'
-        }
-    
+    if is_legal_move is False:
+        return {'status': 'fail'}
+
     # Check if there are any free cells on the board after this move was made
     # If no free cells are present, game is over - since no one will be able to place a counter
-    if (check_for_empty_cells() == False):
-        game_over = True
-        return determine_winner()
-    
+    if check_for_empty_cells(game_state['board']) is False:
+        game_state['game_over'] = True
+        return determine_winner(game_state['board'])
+
     # Determine the other player
-    if (current_player == "Dark "): otherPlayer = "Light"
-    else: otherPlayer = "Dark "
-    
+    if game_state['current_player'] == "Dark ":
+        other_player = "Light"
+    else:
+        other_player = "Dark "
+
     # Now check if the other player can make a move
-    if (any_legal_moves(otherPlayer, board) == False):
+    if any_legal_moves(other_player, board) is False:
         # Check if the current player can make a move
-        if (any_legal_moves(current_player, board) == False):
+        if any_legal_moves(game_state['current_player'], board) is False:
             # Therefore, game is over
-            game_over = True
+            game_state['game_over'] = True
             # Calculate and return the winner
-            return determine_winner()
-        
+            return determine_winner(game_state['board'])
+
         # Otherwise, other player cannot make a move but the current player can
-        # However, if no counter of the other player's colour is present on the board, the game is still over
-        if (checkForOtherPlayersColour(otherPlayer) == False): return determine_winner()
+        # However, if no counter of the other player's colour is present on the board,
+        # the game is still over
+        if check_for_other_players_colour(other_player, game_state['board']) is False:
+            return determine_winner(game_state['board'])
 
         # If counters are present of the other player's colour, then the game can continue
-        # Return the status that the other player cannot make any legal moves, but the current one can
-        # effectively skipping the other player's turn
+        # Save the new game state to file
+        if save_game_state_to_file(game_state) is False:
+            # TODO: Log error to log file
+            print(" === Error: Unable to save game state when " \
+                "other player doesn't have any legal moves")
+
+        # Return the status that the other player cannot make any legal moves,
+        # but the current one can, effectively skipping the other player's turn
         return {
             'status': 'success',
-            'board': board.tolist(),
-            'current_player': current_player,
-            'other_player': otherPlayer,
+            'board': game_state['board'].tolist(),
+            'current_player': game_state['current_player'],
+            'other_player': other_player,
             'ai_coordinate': ai_move,
             'legal_moves_available_for_other_player': False
         }
-    
+
     # Finally, if there are free cells left and the other player can make a move
     # Switch players and continue as normal
-    if (current_player == "Dark "): current_player = "Light"
-    else: current_player = "Dark "
+    if game_state['current_player'] == "Dark ":
+        game_state['current_player'] = "Light"
+    else:
+        game_state['current_player'] = "Dark "
+
+    # Save the new state of the game
+    if save_game_state_to_file(game_state) is False:
+        # TODO: Log error to log file
+        print(" === Error: Unable to save game state when both players can make a legal move")
 
     # Return the new state of the board and the next player
     return {
         'status': 'success',
-        'board': board.tolist(),
-        'next_player': current_player,
+        'board': game_state['board'].tolist(),
+        'next_player': game_state['current_player'],
         'ai_coordinate': ai_move,
         'legal_moves_available_for_other_player': True
     }
 
 
-# Function that allows the user to save the state of the game to their computer
-@app.route('/same_game_board', methods=['POST'])
-def saveGameBoard():
-    # Create the json object to store in the json file
-    gameBoardFile = {
-        'board': board.tolist(),
-        'game_over': game_over,
-        'move_counter': move_counter,
-        'current_player': current_player,
-        'game_log': request.get_data(as_text=True),
-        'ai_opponent_toggle': "on" if ai_opponent_toggle == True else "off"
-    }
+@app.route('/send_game_state_to_user', methods=['POST'])
+def send_game_state_to_user() -> Response:
+    """Allows the user to download the current game state as a JSON file."""
+
+    # First load the current game state
+    game_state = load_game_state_from_file()
 
     # Convert the python dictionary to a json string
     # .encode("utf-8") - converts the python string to bytes so the browser can download the file
-    json_bytes = json.dumps(gameBoardFile, indent=4).encode("utf-8")
+    json_bytes = json.dumps(game_state, indent=4).encode("utf-8")
 
     # Create and return a custom Flask Response object
     return Response(
-        json_bytes, # The file content the user will download
-        mimetype="application/json", # Tells the browser what file type it is - in this case, the file type is json
+        # The file content the user will download
+        json_bytes,
+        # Tells the browser what file type it is - in this case, the file type is json
+        mimetype="application/json",
         # This is the part which forces the browser to download the file instead of displaying it
-        # attachment - triggers the file download
-        # filename=data.json - tells the browser which file name to use
+        #   attachment - triggers the file download
+        #   filename=data.json - tells the browser which file name to use
         headers={"Content-Disposition": "attachment; filename=reversi_game_board_save.json"}
     )
 
 
 # Function that loads a previous reversi game
 @app.route('/load_game_board', methods=['POST'])
-def loadGameBoard():
-    # Ensure python accesses the global variables
-    global board
-    global move_counter
-    global current_player
-    global game_over
-    global ai_opponent_toggle
+def load_user_saved_game_state_bytes() -> dict:
+    """Allows the user to provide a previously saved game state JSON file."""
+
+    # Load the current game state
+    game_state = load_game_state_from_file()
 
     # Extract the file from the request
-    sentFile = request.files.get('file')
+    user_saved_game_state_bytes = request.files.get('file')
 
     # If file is empty, return error message
-    if (not sentFile): return {'status': "fail", 'error_message': "No file received!"}
+    if not user_saved_game_state_bytes:
+        return {
+            'status': "fail",
+            'error_message': "No file received!"
+        }
 
     # Read the contents of the file
-    file_bytes = sentFile.read()
+    file_bytes = user_saved_game_state_bytes.read()
 
     # Convert bytes to string to Python object
     try:
-        gameBoardFile = json.loads(file_bytes.decode("utf-8"))
+        user_saved_game_state = json.loads(file_bytes.decode("utf-8"))
     except json.JSONDecodeError:
-        return {'status': "fail", 'error_message': "Invalid JSON file!"}
-    
+        return {
+            'status': "fail",
+            'error_message': "Invalid JSON file!"
+        }
+
     # Extract the required information from the file
-    board = np.array(gameBoardFile['board'])
-    game_over = gameBoardFile['game_over']
-    move_counter = gameBoardFile['move_counter']
-    current_player = gameBoardFile['current_player']
-    gameLog = gameBoardFile['game_log']
-    ai_opponent_toggle = True if gameBoardFile['ai_opponent_toggle'] == "on" else False
+    game_state['board'] = np.array(user_saved_game_state['board'])
+    game_state['game_over'] = user_saved_game_state['game_over']
+    game_state['move_counter'] = user_saved_game_state['move_counter']
+    game_state['current_player'] = user_saved_game_state['current_player']
+    game_state['game_log'] = user_saved_game_state['game_log']
+    game_state['ai_opponent_toggle'] = user_saved_game_state['ai_opponent_toggle']
+
+    # Save the new game state
+    if save_game_state_to_file(game_state) is False:
+        # TODO: Log error to log file
+        print(" === Error: Unable to save user saved game state")
 
     # Return success status and new board state
     return {
         'status': 'success',
-        'board': board.tolist(),
-        'current_player': current_player,
-        'game_over': game_over,
-        'game_log': gameLog,
-        'ai_opponent_toggle': ai_opponent_toggle
+        'board': game_state['board'].tolist(),
+        'current_player': game_state['current_player'],
+        'game_over': game_state['game_over'],
+        'game_log': game_state['game_log'],
+        'ai_opponent_toggle': game_state['ai_opponent_toggle']
     }
 
 
@@ -342,6 +375,6 @@ def toggleAIOpponent():
 # Only run the app if the current file is being run directly
 if __name__ == "__main__":
     # Start the local web server
-    # When in debug mode, any change to the python files 
+    # When in debug mode, any change to the python files
     # will cause an automatic server reboot
     app.run()
