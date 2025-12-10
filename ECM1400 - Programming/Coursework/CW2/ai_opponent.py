@@ -2,7 +2,7 @@
 import numpy as np
 
 
-def calculate_move(board: list[list[str]]) -> tuple:
+def calculate_move(board: object) -> tuple:
     """
     Takes in the current state of the board and calculates the number
     of opponent counters that are flipped as a result of each legal move.\n
@@ -24,7 +24,7 @@ def calculate_move(board: list[list[str]]) -> tuple:
     for row in range(size):
         for column in range(size):
             # If cell contains "None ", check if a legal move is possible
-            if board[row, column] == "None ":
+            if board[row][column] == "None ":
                 result = legal_move(colour, (column, row), board)
 
                 # Check if this cell results in a legal move
@@ -48,7 +48,7 @@ def calculate_move(board: list[list[str]]) -> tuple:
     return choosen_coordinate
 
 
-def legal_move(colour: str, coordinate: tuple, board: list[list[str]]) -> tuple:
+def legal_move(colour: str, coordinate: tuple, board: object) -> tuple:
     """
     First checks if a counters is already present at the current coordinate.
     If true, this coordinate results in an illegal move.\n
@@ -74,7 +74,7 @@ def legal_move(colour: str, coordinate: tuple, board: list[list[str]]) -> tuple:
     number_of_flipped_counters = 0
 
     # First, lets check whether a counter is already present at this location
-    if (board[coordinate[1], coordinate[0]] != "None "):
+    if board[coordinate[1]][coordinate[0]] != "None ":
         return (False, 0)
 
     # Loop through each direction
@@ -87,7 +87,7 @@ def legal_move(colour: str, coordinate: tuple, board: list[list[str]]) -> tuple:
             and cell_to_check[1] >= 0 and cell_to_check[1] < size):
             # Check if the cell contains "None ", if not,
             # a legal move is possible along this direction
-            if board[cell_to_check[1], cell_to_check[0]] != "None ":
+            if board[cell_to_check[1]][cell_to_check[0]] != "None ":
                 # Analsye the first cell in this direction
                 result = analyse_cell(colour, cell_to_check, board, direction, size)
 
@@ -102,7 +102,7 @@ def legal_move(colour: str, coordinate: tuple, board: list[list[str]]) -> tuple:
 
 
 # Function to analyse a cell to determine if the player can outflank the other
-def analyse_cell(colour: str, cell_to_check: tuple, board: list[list[str]],
+def analyse_cell(colour: str, cell_to_check: tuple, board: object,
                  direction: tuple, size: int) -> tuple:
     """
     Recursive function that travels along a direction to determine if it is legal.
@@ -128,11 +128,11 @@ def analyse_cell(colour: str, cell_to_check: tuple, board: list[list[str]],
 
     # Recursive Section:
     # Check if we have reached the players colour
-    if (board[cell_to_check[1], cell_to_check[0]] == colour):
+    if board[cell_to_check[1]][cell_to_check[0]] == colour:
         return (True, 0)
 
     # Check if we have reached an empty cell
-    if (board[cell_to_check[1], cell_to_check[0]] == "None "):
+    if board[cell_to_check[1]][cell_to_check[0]] == "None ":
         return (False, 0)
 
     # Otherwise, we must have reached the other player's colour

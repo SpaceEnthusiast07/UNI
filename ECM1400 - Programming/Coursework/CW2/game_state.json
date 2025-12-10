@@ -1,0 +1,93 @@
+{
+    "board": [
+        [
+            "None ",
+            "None ",
+            "None ",
+            "None ",
+            "None ",
+            "None ",
+            "None ",
+            "None "
+        ],
+        [
+            "None ",
+            "None ",
+            "None ",
+            "None ",
+            "None ",
+            "None ",
+            "None ",
+            "None "
+        ],
+        [
+            "None ",
+            "None ",
+            "None ",
+            "None ",
+            "None ",
+            "None ",
+            "None ",
+            "None "
+        ],
+        [
+            "None ",
+            "None ",
+            "None ",
+            "Light",
+            "Dark ",
+            "None ",
+            "None ",
+            "None "
+        ],
+        [
+            "None ",
+            "None ",
+            "None ",
+            "Dark ",
+            "Light",
+            "None ",
+            "None ",
+            "None "
+        ],
+        [
+            "None ",
+            "None ",
+            "None ",
+            "None ",
+            "None ",
+            "None ",
+            "None ",
+            "None "
+        ],
+        [
+            "None ",
+            "None ",
+            "None ",
+            "None ",
+            "None ",
+            "None ",
+            "None ",
+            "None "
+        ],
+        [
+            "None ",
+            "None ",
+            "None ",
+            "None ",
+            "None ",
+            "None ",
+            "None ",
+            "None "
+        ]
+    ],
+    "game_over": false,
+    "move_counter": 60,
+    "current_player": "Dark ",
+    "game_log": "Empty",
+    "ai_opponent_toggle": false,
+    "ai_move": [
+        1,
+        1
+    ]
+}

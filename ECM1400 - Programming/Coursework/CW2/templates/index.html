@@ -137,7 +137,7 @@
 
         function sendAIMove() {
             // Send dummy coordinates to the server, indictaing that the AI is going to make a move
-            fetch('/move?x=0&y=0', {
+            fetch('/move?x=1&y=1', {
                 method: 'GET',
             })
             .then(response => response.json())
