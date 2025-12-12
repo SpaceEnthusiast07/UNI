@@ -1,17 +1,78 @@
-"""..."""
+"""
+This module contains three utility functions that provide the
+functionality for the Othello/Reversi game to work.
 
-import numpy as np
+Typlical import:
+  >>> import components as comp
+
+Public Functions:
+ - initialise_board()
+ - print_board()
+ - legal_move()
+
+Internal Helper Functions:
+ - _analyse_cell()
+
+### Brief Function Description
+#### 1. initialise_board(size: int = 8):
+Creates a Reversi/Othello board of default size 8x8.
+
+Sets up the centre four counters as follows:
+    |Light|Dark |
+    |Dark |Light|
+
+If board is an odd size, e.g. `size=9`, `None` is returned.
+
+Example:
+  >>> board = comp.initialise_board(size=6)
+
+
+#### 2. print_board(board: list[list[str]]):
+Prints a representation of the `board` to the console.
+
+A *key* is displayed before the board to indicate what each symbol means.
+
+Column and row numbers are displayed to make the process of reading the board easier.
+
+Example:
+  >>> comp.print_board(board)
+
+
+#### 3. legal_move(colour: str, coordinate: tuple, board: list[list[str]], modify_board: bool):
+Given a player's `colour`, chosen `coordinate`, the current state of the `board` and
+whether the board should be *modified* or not, determine whether this move is legal,
+based on the rules of Othello/Reversi.
+
+Example:
+  >>> legal_move_result = comp.legal_move("Light", (6,7), board, True)
+>>> # Check if (6,7) is a legal move for player "Light"
+>>> if legal_move_result['is_legal_move'] is True:
+>>>     # Extract the new state of the board, only required if modify_board=True
+>>>     board = legal_move_result['board']
+
+
+"""
+
+from numpy import full
+from numpy import array
 
 
 def initialise_board(size: int = 8) -> list[list[str]]:
     """
-    Creates a Reversi/Othello board of default size 8x8.
+    Optionally pass in the preferred `size` of the board, default is `8`.
 
-    Sets up the centre four counters as follows:
-        |LIGHT|DARK|
-        |DARK |LIGHT|
-    
-    If board is an odd size, e.g. `size=9`, `None` is returned.
+    Returns `None` if the preferred size is odd.
+
+    Uses the `numpy.full()` function to create an array of `shape=(size,size)` and
+    `fill_value="None "`. This sets the default value for each cell to `"None "`,
+    indicating that it is an empty cell.
+
+    Then, it sets up the four centre cells in the following pattern:
+        |Light|Dark |
+        |Dark |Light|
+
+    Finally, the function converts the `numpy` array object into a regular
+    python 2d list and returns this new board.
     """
 
     # Check if the size is odd
@@ -24,7 +85,7 @@ def initialise_board(size: int = 8) -> list[list[str]]:
     #   Light = white counter in cell
 
     # Create the 2d array representation of the board
-    board = np.full(shape=(size,size), fill_value="None ")
+    board = full(shape=(size,size), fill_value="None ")
 
     # Set up the four centre cells with the required pattern
     half_of_size = size//2
@@ -77,8 +138,23 @@ def print_board(board: list[list[str]]):
 
 def legal_move(colour: str, coordinate: tuple, board: list[list[str]], modify_board: bool) -> dict:
     """
-    Given a player's `colour`, `coordinate` and the current state of the `board`,
-    determine whether this move is legal.
+    Pass in the current player's `colour`, chosen `coordinate`, the
+    current state of the `board` and whether you want to `modify_board` or not.
+
+    First checks whether this chosen cell is empty, if true, returns the
+    dictionary indicating that this move is illegal.
+
+    Initialises a `numpy.array()` of vector directions.
+
+    Then it loops through each direction, calculating the first cell along this
+    direction and checking that it is within the boundaries of the board.
+
+    Ensuring this `cell_to_check` contains a counter ("Light" or "Dark ").
+
+    It uses the `_analyse_cell()` recursive helper function to travel along the current direction
+    to determine if the `colour` can outflank the other.
+
+    Returns the dictionary representing if the move is legal and the new state of board.
     """
 
     # To access a cell in a 2D array, the row index is provided before the column index
@@ -87,13 +163,13 @@ def legal_move(colour: str, coordinate: tuple, board: list[list[str]], modify_bo
     # Right: board[yCoord, xCoord] = board[cell_to_check[1], cell_to_check[0]]
 
     # Convert the board to a numpy array
-    board = np.array(board)
+    board = array(board)
     # Calculate the size of the board
     size = len(board[0])
     # Array of directions
-    directions = np.array([(0,-1),(1,-1),(1,0),(1,1),(0,1),(-1,1),(-1,0),(-1,-1)])
+    directions = array([(0,-1),(1,-1),(1,0),(1,1),(0,1),(-1,1),(-1,0),(-1,-1)])
     # Convert the coordinate to a numpy array
-    coordinate = np.array(coordinate) - np.array((1,1))
+    coordinate = array(coordinate) - array((1,1))
     # Initialise the is_legal_direction, representing if there exists a direction that is legal
     is_legal_direction = False
 
@@ -117,7 +193,7 @@ def legal_move(colour: str, coordinate: tuple, board: list[list[str]], modify_bo
             # a legal move is possible along this direction
             if board[cell_to_check[1], cell_to_check[0]] != "None ":
                 # Analsye the first cell in this direction
-                result = analyse_cell(colour, cell_to_check, board, direction, modify_board)
+                result = _analyse_cell(colour, cell_to_check, board, direction, modify_board)
                 # Check if this direction has resulted in an outflank,
                 # and we are allowed to modify the board
                 if result is True and modify_board is True:
@@ -134,8 +210,7 @@ def legal_move(colour: str, coordinate: tuple, board: list[list[str]], modify_bo
     }
 
 
-# Function to analyse a cell to determine if the player can outflank the other
-def analyse_cell(colour: str, cell_to_check: object, board: object,
+def _analyse_cell(colour: str, cell_to_check: object, board: object,
                  direction: object, modify_board: bool) -> bool:
     """
     Recursive function that travels along a `direction` to determine if it is a legal direction.
@@ -166,7 +241,7 @@ def analyse_cell(colour: str, cell_to_check: object, board: object,
     # Otherwise, we must have reached the other player's colour
     # Since this cell contains the other player's colour,
     # analyse the next cell along the current direction
-    result = analyse_cell(colour, cell_to_check + direction, board, direction, modify_board)
+    result = _analyse_cell(colour, cell_to_check + direction, board, direction, modify_board)
     # If result is true, that means player has outflanked the other player along this direction
     if result is True and modify_board is True:
         # Therefore, change this cell to the player's colour
