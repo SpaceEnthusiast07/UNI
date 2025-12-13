@@ -49,8 +49,6 @@ Example:
 >>> if legal_move_result['is_legal_move'] is True:
 >>>     # Extract the new state of the board, only required if modify_board=True
 >>>     board = legal_move_result['board']
-
-
 """
 
 from numpy import full

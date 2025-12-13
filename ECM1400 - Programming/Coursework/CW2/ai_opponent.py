@@ -1,4 +1,22 @@
-"""..."""
+"""
+This module houses all the functions required for the implementation
+of an AI opponent in the Othello game.
+
+Typical Import:
+  >>> import ai_opponent as aio
+
+Public Functions:
+ - calculate_move()
+
+Private Functions:
+ - _legal_move()
+ - _analyse_cell()
+
+### Brief Function Description
+#### 1. calculate_move(board: list[list[str]]):
+Loops through each cell of the board and determines if each empty cell is a legal move.
+"""
+
 import numpy as np
 
 
@@ -25,7 +43,7 @@ def calculate_move(board: list[list[str]]) -> tuple:
         for column in range(board_size):
             # If cell contains "None ", check if a legal move is possible
             if board[row][column] == "None ":
-                move_result = legal_move(ai_colour, (column, row), board)
+                move_result = _legal_move(ai_colour, (column, row), board)
 
                 # Check if this cell results in a legal move
                 if move_result[0] is True:
@@ -48,7 +66,7 @@ def calculate_move(board: list[list[str]]) -> tuple:
     return chosen_coordinate
 
 
-def legal_move(ai_colour: str, coordinate: tuple, board: list[list[str]]) -> tuple:
+def _legal_move(ai_colour: str, coordinate: tuple, board: list[list[str]]) -> tuple:
     """
     First checks if a counters is already present at the current coordinate.
     If true, this coordinate results in an illegal move.\n
@@ -89,7 +107,7 @@ def legal_move(ai_colour: str, coordinate: tuple, board: list[list[str]]) -> tup
             # a legal move is possible along this direction
             if board[cell_to_check[1]][cell_to_check[0]] != "None ":
                 # Analsye the first cell in this direction
-                result = analyse_cell(ai_colour, cell_to_check, board, direction, board_size)
+                result = _analyse_cell(ai_colour, cell_to_check, board, direction, board_size)
 
                 # Check if this direction has resulted in an outflank,
                 # state so and increment the counter
@@ -102,7 +120,7 @@ def legal_move(ai_colour: str, coordinate: tuple, board: list[list[str]]) -> tup
 
 
 # Function to analyse a cell to determine if the player can outflank the other
-def analyse_cell(ai_colour: str, cell_to_check: tuple, board: list[list[str]],
+def _analyse_cell(ai_colour: str, cell_to_check: tuple, board: list[list[str]],
                  direction: tuple, board_size: int) -> tuple:
     """
     Recursive function that travels along a direction to determine if it is legal.
@@ -138,7 +156,7 @@ def analyse_cell(ai_colour: str, cell_to_check: tuple, board: list[list[str]],
     # Otherwise, we must have reached the other player's colour
     # Since this cell contains the other player's colour,
     # analyse the next cell along the current direction
-    result = analyse_cell(ai_colour, cell_to_check + direction, board, direction, board_size)
+    result = _analyse_cell(ai_colour, cell_to_check + direction, board, direction, board_size)
     # If result[0] == true, this direction is legal, return true
     if result[0] is True:
         return (True, 1)
