@@ -1,4 +1,40 @@
-"""..."""
+"""
+This module is used to host the Othello game within the command line interface.
+
+Typical Import:
+  >>> import game_engine
+
+Public Functions:
+ - simple_game_loop()
+
+Private Helper Functions:
+ - _cli_coords_input()
+ - _any_legal_moves()
+
+
+### Brief Function Description
+#### 1. simple_game_loop():
+This is the main function for the command line implementation of Othello/Reversi.
+
+It deals with the logic behind verifying a move and ensuring the game can continue.
+
+Once the game has ended, it calculates who is the winner, or if it is a draw, then
+displayes the winner with the scores for each player.
+
+Example Usage:
+  >>> # Run the game
+>>> game_engine.simple_game_loop()
+
+
+#### 2. _cli_coords_input():
+This function aims to ask the current player for their chosen coordinates and contains
+a loop for re-entering coordinates if they are invalid.
+
+
+#### 3. _any_legal_moves(colour: str, board: object):
+The purpose of this function is to determine if the specified colour player
+has at least one legal move available, if so returns True, otherwise returns False.
+"""
 
 import os
 import platform
@@ -6,7 +42,7 @@ import time
 import components as comp
 
 
-def cli_coords_input():
+def _cli_coords_input() -> tuple[int, int]:
     """
     Uses the command line interface and requests the user to
     input their chosen `x` and `y` coordinates.
@@ -36,10 +72,12 @@ def cli_coords_input():
     return (x_coord, y_coord)
 
 
-# Function determines if any legal moves remain for a given player
-def any_legal_moves(colour: str, board: object) -> bool:
+def _any_legal_moves(colour: str, board: object) -> bool:
     """
-    Determines if the specified `colour` has at least one legal move.
+    Searches through the board and for each empty cell, determines if
+    this is a legal move for the specified colour player.
+
+    True is returned if one legal move is found, otherwise False is returned.
     """
 
     for row in range(len(board[0])):
@@ -55,10 +93,26 @@ def any_legal_moves(colour: str, board: object) -> bool:
     return False
 
 
-# Main loop for game
 def simple_game_loop():
     """
-    Main loop for game
+    This is the main loop for the command line version of Othello/Reversi.
+
+    Continues to loop until there are no moves left or neither player can make a legal move.
+
+    At the start of each loop iteration, the command line screen is cleared for a consistent
+    and non cluttered display of the game.
+
+    The current board is displayed for the player's to see. Then the players are told who's
+    turn it is and asks them to input their chosen x and y coordinates.
+
+    If the move is legal, they are informed and after a certain amount of time, the loop continues,
+    refreshing the screen and showing the new state of the board.
+
+    If the move is not legal, the player is informed and asked to input their
+    chosen coordinates again.
+
+    When the board is full or neither player can make a legal move, the main loop exits,
+    displaying who won and each player's score.
     """
 
     # Initialise the board
@@ -102,7 +156,7 @@ def simple_game_loop():
             break
 
         # Check if there are any legal moves available for the current player
-        if any_legal_moves(current_player, board) is False:
+        if _any_legal_moves(current_player, board) is False:
             # Determine the other player
             if current_player == "Dark ":
                 other_player = "Light"
@@ -110,7 +164,7 @@ def simple_game_loop():
                 other_player = "Dark "
 
             # Check whether either player can make a move
-            if any_legal_moves(other_player, board) is False:
+            if _any_legal_moves(other_player, board) is False:
                 # Therefore, game is over
                 # Initialise player score counters
                 light_counter = 0
@@ -123,12 +177,6 @@ def simple_game_loop():
                             dark_counter += 1
                         elif cell == "Light":
                             light_counter += 1
-
-                # Determine who is the winner
-                if dark_counter > light_counter:
-                    winner = "Dark"
-                else:
-                    winner = "Light"
 
                 game_over = True
                 # Break out of game loop
@@ -160,7 +208,7 @@ def simple_game_loop():
         # Allow the current player to keep placing counters until a legal move is made
         while legal_move_made is False:
             # Obtain the coordinates the current player is going to play
-            coords = cli_coords_input()
+            coords = _cli_coords_input()
 
             # Check whether the move is legal
             is_legal_move_results = comp.legal_move(current_player, coords, board, True)
@@ -192,12 +240,6 @@ def simple_game_loop():
                 if cell == "Light":
                     light_counter += 1
 
-        # Determine who is the winner
-        if dark_counter > light_counter:
-            winner = "Dark"
-        else:
-            winner = "Light"
-
         # If no of the other player's counters are present, game is over
         if other_player_counter == 0:
             game_over = True
@@ -224,10 +266,11 @@ def simple_game_loop():
     else:
         print("Light Won!")
 
-    # Output counter stats
-    print(f"The board now contains:\n  -> {dark_counter} "\
-          "dark counters\n  -> {light_counter} light counters")
+    # Output the points scored by each player
+    print(f"\nScores:\n  -> Dark scored {dark_counter} \n  -> light scored {light_counter}")
 
 
+# Only runs simple_game_loop automatically if this file is being run directly
+# This ensures that when this module is imported, simple_game_loop does not run automatically
 if __name__ == "__main__":
     simple_game_loop()

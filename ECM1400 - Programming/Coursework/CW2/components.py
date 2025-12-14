@@ -49,6 +49,13 @@ Example:
 >>> if legal_move_result['is_legal_move'] is True:
 >>>     # Extract the new state of the board, only required if modify_board=True
 >>>     board = legal_move_result['board']
+
+
+#### 4. _analyse_cell(...):
+This is the recursive function that travels along a particular direction to determine
+if the current move is legal along this direction.
+
+Returns True if legal and False if not.
 """
 
 from numpy import full
@@ -213,7 +220,19 @@ def _analyse_cell(colour: str, cell_to_check: object, board: object,
     """
     Recursive function that travels along a `direction` to determine if it is a legal direction.
 
-    Returns `True` if this direction results in an outflank, otherwise it returns `False`.
+    If the algorithm has travelled outside the boundaries of the board or reached an empty cell, 
+    then this direction is illegal, returning False.
+
+    If the player's colour is reached, then this direction is legal, returning True.
+
+    Otherwise, move to the next cell along this direction and repeat the process.
+
+    If this direction has resulted in an outflank and we are allowed to modify the board,
+    change the current cell's colour to the current player's colour and return True.
+
+    Else, return True if it is still legal but we are not allowed to modify the board.
+
+    Finally, return False indicating this direction doesn't result in an outflank.
     """
 
     # Calculate the size of the board

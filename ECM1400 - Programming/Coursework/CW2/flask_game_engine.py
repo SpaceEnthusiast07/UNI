@@ -1,4 +1,117 @@
-"""..."""
+"""
+This module is used to host the Othello game using Flask (a python web server and framework)
+and website GUI.
+
+To use your own website GUI, replace the default `index.html` file within the `templates`
+folder and ensure it is named `index.html`.
+
+Typical Import:
+  >>> import flask_game_engine as fge
+
+To run the Flask server, use:
+  >>> fge.app.run()
+
+Flask may appear not to load, however, its initialisation messages that are usually printed
+to the console are now written to an `info.log` file. If this file doesn't exist, running the
+application should create it in the same directory that the module is stored in.
+
+You will find the website address written in this `info.log` file as well.
+
+Public Functions:
+ - home_page()
+ - move()
+ - send_game_state_to_user()
+ - load_user_saved_game_state_bytes()
+ - reset_board()
+ - toggle_ai_opponent()
+
+Private Helper Functions:
+ - _any_legal_moves()
+ - _save_game_state_to_file()
+ - _load_game_state_from_file()
+ - _load_config_data()
+ - _determine_winner()
+ - _check_for_empty_cells()
+ - _check_for_other_players_colour()
+
+
+### Brief Function Descriptions
+#### 1. home_page():
+Accessed by visiting `/`.
+
+This function reads the `config.json` file, starts a new game and stores this new game in
+the `game_state.json` file.
+
+
+#### 2. move():
+Accessed through `/move`.
+
+This function deals with the logic behind verifying a move, switching players and
+incorporating the AI opponent.
+
+It takes 2 optional arguments in the URL - `x` and `y`, utilising the HTTP GET method.
+Example URL: `/move?x=3&y=4`. Here, `x=3` and `y=4`.
+
+
+#### 3. send_game_state_to_user():
+Accessed through `/send_game_state_to_user` and utilises the HTTP POST method.
+
+Receives the game log as plain text, updates the game state and sends the user a json file
+of the current game state that their browser downloads automatically.
+
+
+#### 4. load_user_saved_game_state_bytes():
+Accessed through `/load_game_board` and utilises the HTTP POST method.
+
+Allows the user to load a previously saved `game_state.json` file and continue their game
+where they left off.
+
+
+#### 5. reset_board():
+Accessed through `/reset_board`.
+
+Allows the user to start a new game.
+
+
+#### 6. toggle_ai_opponent():
+Accessed through `/toggle_ai_opponent` and utilises the HTTP POST method.
+
+Facilitates the toggling of the AI opponent on or off.
+
+
+#### 7. _any_legal_moves(colour: str, board: list[list[str]]):
+Uses the current state of the board and the specified player colour to determine if this player
+has at least one legal move available, if so True is returned, otherwise False is returned.
+
+
+#### 8. _save_game_state_to_file(current_game_state: dict):
+Saves the provided game state to the `game_state.json` file.
+
+
+#### 9. _load_game_state_from_file():
+Loads the game state from the `game_state.json` file and returns it as a python dictionary.
+
+
+#### 10. _load_config_data():
+Loads the config data from the `config.json` file and is used in `home_page()`.
+
+
+#### 11. _determine_winner(board: list[list[str]]):
+Given the current state of the board, determine which colour has won.
+
+This is done by counting the number of each player's counter. The player
+with the most counters wins.
+
+
+#### 12. _check_for_empty_cells(board: list[list[str]]):
+Searches the board for an empty cell, if at least one is found,
+True is returned, otherwise False is returned.
+
+
+#### 13. _check_for_other_players_colour(colour: str, board: list[list[str]]):
+Given a player's colour, it searches the board for this colour. If at least one counter
+of this colour is found, True is returned, otherwise False is returned.
+"""
 
 import os
 import json
@@ -17,6 +130,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ERROR_LOG_PATH = os.path.join(BASE_DIR, "error.log")
 INFO_LOG_PATH = os.path.join(BASE_DIR, "info.log")
 GAME_STATE_PATH = os.path.join(BASE_DIR, "game_state.json")
+CONFIG_PATH = os.path.join(BASE_DIR, "config.json")
 
 # Set up the info logger
 logging.basicConfig(filename=INFO_LOG_PATH, filemode="a", level=logging.INFO,
@@ -29,7 +143,7 @@ logging.basicConfig(filename=ERROR_LOG_PATH, filemode="a", level=logging.ERROR,
 error_logger = logging.getLogger()
 
 
-def any_legal_moves(colour: str, board: object) -> bool:
+def _any_legal_moves(colour: str, board: list[list[str]]) -> bool:
     """
     Given a player's colour, determine if they have at least one legal move available.
     """
@@ -46,7 +160,7 @@ def any_legal_moves(colour: str, board: object) -> bool:
     return False
 
 
-def save_game_state_to_file(current_game_state: dict) -> bool:
+def _save_game_state_to_file(current_game_state: dict) -> bool:
     """Takes a Python dictionary representing the current 
     games state and saves it to a JSON game state file."""
 
@@ -54,7 +168,7 @@ def save_game_state_to_file(current_game_state: dict) -> bool:
         json.dump(current_game_state, game_state_file, indent=4)
 
 
-def load_game_state_from_file() -> dict:
+def _load_game_state_from_file() -> dict:
     """Loads the game state from the JSON game state file."""
 
     with open(GAME_STATE_PATH, 'r', encoding='utf-8') as game_state_file:
@@ -63,27 +177,16 @@ def load_game_state_from_file() -> dict:
     return game_state
 
 
-@app.route('/')
-def home_page():
-    """Executed every time the webpage is visited.\n
-    Resets some variables and saves them to the game state file."""
+def _load_config_data() -> dict:
+    """Loads the config data to use in the game_state file."""
 
-    # Reset the game state variables
-    board = comp.initialise_board()
-    save_game_state_to_file({
-        'board': board,
-        'game_over': False,
-        'move_counter': 60,
-        'current_player': "Dark ",
-        'game_log': "Empty",
-        'ai_opponent_toggle': False,
-        'ai_move': (1,1)
-    })
+    with open(CONFIG_PATH, 'r', encoding='utf-8') as config_file:
+        config_data = json.load(config_file)
 
-    return render_template("index.html", game_board=board)
+    return config_data
 
 
-def determine_winner(board: object) -> dict:
+def _determine_winner(board: list[list[str]]) -> dict:
     """Counts the number of counters of each colour. 
     Then, calculates which colour is the winner, or if it is a draw."""
 
@@ -115,7 +218,7 @@ def determine_winner(board: object) -> dict:
     }
 
 
-def check_for_empty_cells(board: object) -> bool:
+def _check_for_empty_cells(board: list[list[str]]) -> bool:
     """Searches through the board and returns True if 
     the board contains at least one empty cell, otherwise it returns False."""
 
@@ -127,7 +230,7 @@ def check_for_empty_cells(board: object) -> bool:
     return False
 
 
-def check_for_other_players_colour(colour: str, board: object) -> bool:
+def _check_for_other_players_colour(colour: str, board: list[list[str]]) -> bool:
     """Searches the board for a counter of the specified colour.\n
     Returns True if at least one counter of the specified colour
     is present, otheriwse it returns False."""
@@ -139,6 +242,29 @@ def check_for_other_players_colour(colour: str, board: object) -> bool:
     return False
 
 
+@app.route('/')
+def home_page():
+    """Executed every time the webpage is visited.\n
+    Resets some variables and saves them to the game state file."""
+
+    # Load the config data
+    config_data = _load_config_data()
+
+    # Reset the game state variables
+    board = comp.initialise_board()
+    _save_game_state_to_file({
+        'board': board,
+        'game_over': config_data['initial_game_over_status'],
+        'move_counter': config_data['default_move_counter'],
+        'current_player': config_data['start_player'],
+        'game_log': config_data['game_log'],
+        'ai_opponent_toggle': config_data['ai_opponent_toggle'],
+        'ai_move': config_data['ai_move']
+    })
+
+    return render_template("index.html", game_board=board)
+
+
 @app.route('/move', methods=['GET'])
 def move() -> dict:
     """
@@ -147,7 +273,7 @@ def move() -> dict:
 
     try:
         # Load the game state
-        game_state = load_game_state_from_file()
+        game_state = _load_game_state_from_file()
 
         # Extract the x and y coordinates for the move
         x_coord = int(request.args['x'])
@@ -164,15 +290,15 @@ def move() -> dict:
             }
 
         # First check if there are any empty cells, the game is over or there are any moves left
-        if (check_for_empty_cells(game_state['board']) is False
+        if (_check_for_empty_cells(game_state['board']) is False
                 or game_state['game_over'] is True
                 or game_state['move_counter'] <= 0):
 
             # Set game_over to true
             game_state['game_over'] = True
-            save_game_state_to_file(game_state)
+            _save_game_state_to_file(game_state)
             # Calculate the winner and retrun the results
-            return determine_winner(game_state['board'])
+            return _determine_winner(game_state['board'])
 
         # === AI Opponent Section ===
         # Check if the AI opponent is enabled and it is the AI's turn
@@ -191,7 +317,7 @@ def move() -> dict:
                 game_state['current_player'] = "Dark "
 
                 # Save the new game state
-                save_game_state_to_file(game_state)
+                _save_game_state_to_file(game_state)
                 error_logger.error(game_state['current_player'])
 
                 return {
@@ -225,10 +351,10 @@ def move() -> dict:
 
         # Check if there are any free cells on the board after this move was made
         # If no free cells are present, game is over - since no one will be able to place a counter
-        if check_for_empty_cells(game_state['board']) is False:
+        if _check_for_empty_cells(game_state['board']) is False:
             game_state['game_over'] = True
-            save_game_state_to_file(game_state)
-            return determine_winner(game_state['board'])
+            _save_game_state_to_file(game_state)
+            return _determine_winner(game_state['board'])
 
         # Determine the other player
         if game_state['current_player'] == "Dark ":
@@ -237,24 +363,24 @@ def move() -> dict:
             other_player = "Dark "
 
         # Now check if the other player can make a move
-        if any_legal_moves(other_player, game_state['board']) is False:
+        if _any_legal_moves(other_player, game_state['board']) is False:
             # Check if the current player can make a move
-            if any_legal_moves(game_state['current_player'], game_state['board']) is False:
+            if _any_legal_moves(game_state['current_player'], game_state['board']) is False:
                 # Therefore, game is over
                 game_state['game_over'] = True
                 # Calculate and return the winner
-                return determine_winner(game_state['board'])
+                return _determine_winner(game_state['board'])
 
             # Otherwise, other player cannot make a move but the current player can
             # However, if no counter of the other player's colour is present on the board,
             # the game is still over
-            if check_for_other_players_colour(other_player, game_state['board']) is False:
-                save_game_state_to_file(game_state)
-                return determine_winner(game_state['board'])
+            if _check_for_other_players_colour(other_player, game_state['board']) is False:
+                _save_game_state_to_file(game_state)
+                return _determine_winner(game_state['board'])
 
             # If counters are present of the other player's colour, then the game can continue
             # Save the new game state to file
-            if save_game_state_to_file(game_state) is False:
+            if _save_game_state_to_file(game_state) is False:
                 logging.error("Unable to save game state when other " \
                 "player doesn't have an legal moves.")
 
@@ -277,7 +403,7 @@ def move() -> dict:
             game_state['current_player'] = "Dark "
 
         # Save the new state of the game
-        if save_game_state_to_file(game_state) is False:
+        if _save_game_state_to_file(game_state) is False:
             error_logger.error("Unable to save game state when both " \
             "players can make a legal move.")
 
@@ -308,7 +434,7 @@ def send_game_state_to_user() -> Response:
     """Allows the user to download the current game state as a JSON file."""
 
     # First load the current game state
-    game_state = load_game_state_from_file()
+    game_state = _load_game_state_from_file()
 
     # Extract the game log text
     game_state['game_log'] = request.get_data(as_text=True)
@@ -330,13 +456,12 @@ def send_game_state_to_user() -> Response:
     )
 
 
-# Function that loads a previous reversi game
 @app.route('/load_game_board', methods=['POST'])
 def load_user_saved_game_state_bytes() -> dict:
     """Allows the user to provide a previously saved game state JSON file."""
 
     # Load the current game state
-    game_state = load_game_state_from_file()
+    game_state = _load_game_state_from_file()
 
     # Extract the file from the request
     user_saved_game_state_bytes = request.files.get('file')
@@ -369,7 +494,7 @@ def load_user_saved_game_state_bytes() -> dict:
     game_state['ai_opponent_toggle'] = user_saved_game_state['ai_opponent_toggle']
 
     # Save the new game state
-    if save_game_state_to_file(game_state) is False:
+    if _save_game_state_to_file(game_state) is False:
         error_logger.error("Unable to save user saved game state.")
 
     # Return success status and new board state
@@ -383,13 +508,12 @@ def load_user_saved_game_state_bytes() -> dict:
     }
 
 
-# Function that resets the board, ready for a new game
 @app.route('/reset_board')
 def reset_board() -> dict:
     """Resets the board and other game state variables."""
 
     # Load the current game_state
-    game_state = load_game_state_from_file()
+    game_state = _load_game_state_from_file()
 
     # First initialise a new board
     game_state['board'] = comp.initialise_board()
@@ -401,7 +525,7 @@ def reset_board() -> dict:
     game_state['game_over'] = False
 
     # Save the new game state to file
-    if save_game_state_to_file(game_state) is False:
+    if _save_game_state_to_file(game_state) is False:
         error_logger.error("Unable to save game state once reset board.")
 
     # Return success status and the new board
@@ -418,7 +542,7 @@ def toggle_ai_opponent() -> dict:
 
     try:
         # Load the current game state
-        game_state = load_game_state_from_file()
+        game_state = _load_game_state_from_file()
 
         # Retrieve the new value of the toggle
         user_checkbox_checked_state = request.get_data(as_text=True)
@@ -430,7 +554,7 @@ def toggle_ai_opponent() -> dict:
             game_state['ai_opponent_toggle'] = False
 
         # Save the new game state to file
-        if save_game_state_to_file(game_state) is False:
+        if _save_game_state_to_file(game_state) is False:
             error_logger.error("Unable to save game state when toggling the AI opponent.")
 
         # Return status
@@ -446,6 +570,6 @@ def toggle_ai_opponent() -> dict:
 # Only run the app if the current file is being run directly
 if __name__ == "__main__":
     # Start the local web server
-    # When in debug mode, any change to the python files
+    # When debug=True, any change to the python files
     # will cause an automatic server reboot
     app.run()

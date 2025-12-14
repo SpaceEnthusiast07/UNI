@@ -8,13 +8,46 @@ Typical Import:
 Public Functions:
  - calculate_move()
 
-Private Functions:
+Private Helper Functions:
  - _legal_move()
  - _analyse_cell()
 
+
 ### Brief Function Description
 #### 1. calculate_move(board: list[list[str]]):
-Loops through each cell of the board and determines if each empty cell is a legal move.
+Loops through each cell of the board and determines if any of the
+empty cells are legal and how many counters each legal cell flips.
+
+Each legal cell is added to a list containing the coordinate and
+number of flipped counters. This list is then sorted using the number
+of flipped counters as the key, in descending order.
+
+The first coordinate is returned if only one exists, otherwise the
+second is returned. If no legal moves are found, `(-1,-1)` is returned.
+
+Example:
+  >>> ai_move = aio.calculate_move(board)
+>>> # Check if the ai has not found a move
+>>> if ai_move == (-1,-1):
+>>>     # Report that the AI has not found a move
+>>>     print("AI has not found a move.")
+
+
+#### 2. _legal_move(ai_colour: str, coordinate: tuple, board: list[list[str]]):
+Given the AI's colour, an empty cell (`coordinate`), and the current state of the `board`,
+determine whether this move is legal, based on the rules of Othello/Reversi.
+
+If this move is legal, the number of flipped counters is counted along each direction.
+
+A tuple is returned containing whether is move is legal along with the number of counters flipped.
+
+
+#### 3. _analyse_cell(ai_colour: str, cell_to_check: tuple, board: list[list[str]], ...):
+This is the recursive function that travels along the current direction to determine if the
+AI can outflank the other player.
+
+This function returns a tuple containing whether the direction resulted in an outflank and
+the number of flipped counters.
 """
 
 import numpy as np
@@ -119,7 +152,6 @@ def _legal_move(ai_colour: str, coordinate: tuple, board: list[list[str]]) -> tu
     return (legal_direction, number_of_flipped_counters)
 
 
-# Function to analyse a cell to determine if the player can outflank the other
 def _analyse_cell(ai_colour: str, cell_to_check: tuple, board: list[list[str]],
                  direction: tuple, board_size: int) -> tuple:
     """
