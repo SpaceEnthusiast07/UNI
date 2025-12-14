@@ -1,0 +1,11 @@
+{
+    "initial_game_over_status": false,
+    "default_move_counter": 60,
+    "start_player": "Dark ",
+    "game_log": "Empty",
+    "ai_opponent_toggle": false,
+    "ai_move": [
+        1,
+        1
+    ]
+}
