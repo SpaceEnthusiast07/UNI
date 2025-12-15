@@ -322,7 +322,8 @@ def move() -> dict:
 
                 return {
                     'status': 'fail',
-                    'next_player': game_state['current_player']
+                    'next_player': game_state['current_player'],
+                    'error_message': "The AI could not make a move."
                 }
 
             # Otherwise, extract the ai_move coordinates and assign them to the x and y coords
