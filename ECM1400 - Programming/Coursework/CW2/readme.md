@@ -105,6 +105,8 @@ Returns True if legal and False if not.
 This module houses all the functions required for the implementation
 of an AI opponent in the Othello game.
 
+This module shares much of its logic with `components.py` and as such, the reasons behind how it works are largely the same. However, the functions differ slightly in their return values and how they handle this change. Since the AI opponent needs to choose the move that results in the most flipped counters, during the recursion backtracking, the return value is now a tuple containing a boolean representing if this direction is legal and the number of counters flipped along this direction. These are then used to evaluate which move would be best.
+
 Typical Import:
 ```import ai_opponent as aio```
 
@@ -196,6 +198,8 @@ and website GUI.
 
 To use your own website GUI, replace the default `index.html` file within the `templates`
 folder and ensure it is named `index.html`.
+
+This module contains many helper functions to simplify the `move()` function. This approach was chosen as there are many ways for the game to progress or end. The `move()` function is large and complex as it needs to incorporate the AI opponent and the many ways to validate a move.
 
 Typical Import:
 ```import flask_game_engine as fge```
