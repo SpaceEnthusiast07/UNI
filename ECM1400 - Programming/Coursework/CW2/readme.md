@@ -32,6 +32,7 @@ Table of Contents
       - [11. \_determine\_winner(board: list\[list\[str\]\]):](#11-_determine_winnerboard-listliststr)
       - [12. \_check\_for\_empty\_cells(board: list\[list\[str\]\]):](#12-_check_for_empty_cellsboard-listliststr)
       - [13. \_check\_for\_other\_players\_colour(colour: str, board: list\[list\[str\]\]):](#13-_check_for_other_players_colourcolour-str-board-listliststr)
+  - [Info](#info)
 
 
 ## Module 1 - `components.py`
@@ -306,3 +307,9 @@ True is returned, otherwise False is returned.
 #### 13. _check_for_other_players_colour(colour: str, board: list[list[str]]):
 Given a player's colour, it searches the board for this colour. If at least one counter
 of this colour is found, True is returned, otherwise False is returned.
+
+
+## Info
+Author = Cameron Russell
+Institute = University of Exeter
+Student ID = 750032575
