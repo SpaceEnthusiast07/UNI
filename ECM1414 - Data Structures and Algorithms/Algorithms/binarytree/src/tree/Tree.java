@@ -10,12 +10,20 @@ public class Tree {
 	// Actual data in node
 	private int data;
 	
-	// Constructor
+	// Constructors
+    public Tree(int data) {
+        this.data = data;
+    }
 	public Tree(Tree parent, int data) {
 		// Assign the object reference for the parent to the attribute
 		this.parent = parent;
 		this.data = data;
 	}
+
+    // Getter for the data attribute
+    public int getData() {
+        return this.data;
+    }
 	
 	// Method to add a node
 	public void add(int newNodeData) {
@@ -43,19 +51,25 @@ public class Tree {
 
 	@Override
 	public String toString() {
-		String parentString;
-		String leftString;
-		String rightString;
+        String leftChildData = "";
+        String rightChildData = "";
+        String leftChildString = "";
+        String rightChildString = "";
 
-		if (this.parent == null) {parentString = "";}
-		else {parentString = this.parent.toString();}
+        if (this.left != null) {
+            leftChildData = Integer.toString(this.left.getData());
+            leftChildString = this.left.toString();
+        }
 
-		if (this.left == null) {leftString = "";}
-		else {leftString = this.left.toString();}
+        if (this.right != null) {
+            rightChildData = Integer.toString(this.right.getData());
+            rightChildString = this.right.toString();
+        }
 
-		if (this.right == null) {rightString = "";}
-		else {rightString = this.right.toString();}
+        String outputString = String.format("TreeNode:  data=%d  left=%s  right=%s", this.data, leftChildData, rightChildData);
 
-		return String.format("TreeNode:\n--- parent=%s\n--- left=%s\n--- right=%s\n--- data=%d", parentString, leftString, rightString, this.data);
+        outputString = String.format("%s\n%s\n%s", outputString, leftChildString, rightChildString);
+
+        return outputString;
 	}
 }
