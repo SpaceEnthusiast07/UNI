@@ -1,14 +1,24 @@
 /**
  * This is the class that implements the Heap ADT, specifically a min-heap.
+ * <ul>
+ * <li>
  * Structure:
- * - Array indices start at 0
- * - For any given node i, if left child is at index 2i+1 and right child at index 2i+2
- * - For any given node i, its parent is at index (i-1)//2 (integer division)
+ * <ul>
+ *      <li>Array indices start at 0</li>
+ *      <li>For any given node i, if left child is at index 2i+1 and right child at index 2i+2</li>
+ *      <li>For any given node i, its parent is at index (i-1)//2 (integer division)</li>
+ * </li>
+ * </ul>
+ * <li>
  * Logic:
- * - When inserting a new node, we simply insert it at the next available index (nodeCount)
- * - This new node will then "swim" up the heap and settle in its correct space
- * - When extracting the root node, the last node will replace it
- * - The new root node will then "sink" down the heap and settle in its correct space
+ * <ul>
+ *      <li>When inserting a new node, we simply insert it at the next available index (nodeCount)</li>
+ *      <li>This new node will then "swim" up the heap and settle in its correct space</li>
+ *      <li>When extracting the root node, the last node will replace it</li>
+ *      <li>The new root node will then "sink" down the heap and settle in its correct space</li>
+ * </ul>
+ * </li>
+ * </ul>
  */
 class Heap {
     // I am implementing the heap using an array
@@ -41,7 +51,9 @@ class Heap {
     }
 
     /**
-     * Inserts a new node into the heap and ensures the min-heap property remains.
+     * Inserts a new node into the min-heap and ensures the min-heap property remains.<br>
+     * The new node is inserted in the last place in the min-heap, and then it swims up
+     * through the min-heap into its correct place.
      * @param newData The new node to add to the min-heap.
      */
     public void insert(int newData) {
@@ -79,6 +91,12 @@ class Heap {
         }
     }
 
+    /**
+     * Extracts the min element from the min-heap, which is the root node.<br>
+     * It then moves the last node to the position of the root node, and sinks this
+     * new root node in to its correct place.
+     * @return The min element extracted from the min-heap.
+     */
     public int extractMin() {
         // Since this is a min-heap, the root node is the minimum element
         int min = data[0];
@@ -129,6 +147,10 @@ class Heap {
         return min;
     }
 
+    /**
+     * Determines if the provided node is a leaf node.
+     * @param nodeIndex The index of the node in the array to analyse.
+     */
     private boolean isLeafNode(int nodeIndex) {
         // Calculate the indices for the left and right children nodes
         int leftChild = (nodeIndex*2) + 1;
@@ -149,8 +171,11 @@ class Heap {
     }
 
     /**
+     * Converts the array representation of the min-heap to a string representation for the user to view.<br>
      * Currently, the best way I can output a tree structure is to output the corresponding edges between nodes.
+     * @return A string representing the min-heap.
      */
+    @Override
     public String toString() {
         // Create a new string builder object to build the output of the heap
         StringBuilder sb = new StringBuilder("");
@@ -162,6 +187,11 @@ class Heap {
         return sb.toString();
     }
 
+    /**
+     * The recursive function that converts the min-heap to a string.
+     * @param nodeIndex The index of the node to start at.
+     * @param sb The string builder object used to create the string representation.
+     */
     private void convertHeapToString(int nodeIndex, StringBuilder sb) {
         // If the current node is a leaf node, there is nothing to output
         if (isLeafNode(nodeIndex)) {
