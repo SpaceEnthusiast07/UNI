@@ -11,24 +11,17 @@ public class TaskSchedulerApp {
         // Create the console input object
         Scanner in = new Scanner(System.in);
 
+        // Create the home page
+        Page homePage = new Page("Task Scheduler", "A - Add Task | E - Extract Next Task | H - Help | Q - Quit");
+
         // Declare the variables used in the app's main loop
         String userInput;
 
         // Allows the app to run continuously
         while (exitApp == false) {
-            outputAppTitle();
+            System.out.println(homePage);
 
-            // Get the user's input
-            System.out.print("> ");
-            userInput = in.nextLine();
-
-            // Analyse the user's input
-            analyseUserInput(userInput);
-
-
-
-            // Close the input stream
-            in.close();
+            
             exitApp = true;
         }
     }
@@ -43,6 +36,40 @@ public class TaskSchedulerApp {
      * @param userInput The user's input.
      */
     public static void analyseUserInput(String userInput) {
+        // Split the string at each space
+        String[] segmentedInput = userInput.split(" ");
+
+        // Convert the first character to lowercase
+        segmentedInput[0] = segmentedInput[0].toLowerCase();
+
+        // Match the first character to a key operation character
+        switch (segmentedInput[0]) {
+            case "a": addTask(segmentedInput); break;
+            case "e": break;
+            case "h": break;
+            case "q": break;
+            default: throw new InvalidOperationInput("Enter \'H\' for input help.");
+        }
+    }
+
+    /**
+     * Parses the user's input and adds the requested task to the priority queue.
+     * @param queue The priority queue that the new task is going to be added to.
+     * @param segmentedInput The segmented user input containing the data about the new task to add.
+     */
+    public static void addTask(PriorityQueue queue, String[] segmentedInput) {
+        //
+    }
+    
+    /**
+     * Extracts the next task to perform.
+     * @param queue The priority queue containing the various tasks.
+     */
+    public static void extractNextTask(PriorityQueue queue) {
+        //
+    }
+
+    public static void displayHelpPage() {
         //
     }
 }
