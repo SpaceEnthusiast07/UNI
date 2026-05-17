@@ -27,11 +27,13 @@ public class Page {
         int dividerLength = title.length() + 10;
 
         stringRep.append("=".repeat(dividerLength));
-        stringRep.append("\n==== ")
+        stringRep.append("\n==== ");
         stringRep.append(this.title);
-        stringRep.append(" ====\n")
+        stringRep.append(" ====\n");
         stringRep.append("=".repeat(dividerLength));
         stringRep.append("\n");
         stringRep.append(this.content);
+
+        return stringRep.toString();
     }
 }

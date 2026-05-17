@@ -4,9 +4,9 @@
  * and "value" to be compatible with this implementation.<br>
  * A more important task has a priority closer to 1.<br>
  */
-class PriorityQueue<T> {
+class PriorityQueue {
     // I am implementing the min-heap using an array
-    private T[] data;
+    private TaskNode[] data;
     // This is the current number of nodes in the heap
     private int nodeCount;
     // This is the maximum number of nodes allowed in the heap
@@ -21,7 +21,7 @@ class PriorityQueue<T> {
         // Initialise the maximum number of nodes (size of data array)
         this.maxNodes = maxNodes;
         // Initialise the data array
-        this.data = new T[this.maxNodes];
+        this.data = new TaskNode[this.maxNodes];
         // Initialise the node count
         this.nodeCount = 0;
     }
@@ -35,12 +35,20 @@ class PriorityQueue<T> {
     }
 
     /**
+     * Determines if the heap is empty.
+     * @return True if the heap is empty, otherwise false.
+     */
+    public boolean isEmpty() {
+        return nodeCount == 0;
+    }
+
+    /**
      * Inserts a new node into the min-heap and ensures the min-heap property remains.<br>
      * The new node is inserted in the last place in the min-heap, and then it swims up
      * through the min-heap into its correct place.
      * @param newData The new node to add to the min-heap.
      */
-    public void insert(T newData) {
+    public void insert(TaskNode newData) {
         // Check if the heap is full
         if (isFull()) {
             System.out.println("Heap is full!");
@@ -81,9 +89,15 @@ class PriorityQueue<T> {
      * new root node in to its correct place.
      * @return The min element extracted from the min-heap.
      */
-    public T extractMin() {
+    public TaskNode extractMin() {
+        // Check if the heap is empty
+        if (isEmpty()) {
+            System.out.println("Queue is empty.");
+            return null;
+        }
+
         // Since this is a min-heap, the root node is the minimum element
-        T min = data[0];
+        TaskNode min = data[0];
 
         // Move the last node into the position of the root
         data[0] = data[nodeCount-1];
@@ -95,7 +109,7 @@ class PriorityQueue<T> {
         int leftChild;
         int rightChild;
         int smallerChild;
-        int temp;
+        TaskNode temp;
 
         // Iteratively "sink" this new root node into its correct place
         while (foundCorrectPlace == false && isLeafNode(currentNode) == false) {
@@ -127,6 +141,9 @@ class PriorityQueue<T> {
             }
         }
 
+        // Decrement the node count to reflect the removed node
+        nodeCount--;
+
         // Return the min element
         return min;
     }
@@ -155,6 +172,7 @@ class PriorityQueue<T> {
     }
 
     /**
+     * Needs Correction!<br>
      * Converts the array representation of the min-heap to a string representation for the user to view.<br>
      * Currently, the best way I can output a tree structure is to output the corresponding edges between nodes.
      * @return A string representing the min-heap.
@@ -188,12 +206,12 @@ class PriorityQueue<T> {
 
         // If the left child exists, add that edge to the string
         if (leftChild < maxNodes && data[leftChild] != null) {
-            sb.append(String.format("%d-%d ", data[nodeIndex].getValue(), data[leftChild].getValue()));
+            sb.append(String.format("%d-%d ", data[nodeIndex].getTitle(), data[leftChild].getTitle()));
         }
 
         // If the right child exists, add that edge to the string
         if (rightChild < maxNodes && data[rightChild] != null) {
-            sb.append(String.format("%d-%d ", data[nodeIndex].getValue(), data[rightChild].getValue()));
+            sb.append(String.format("%d-%d ", data[nodeIndex].getTitle(), data[rightChild].getTitle()));
         }
 
         // Repeated code warning!
