@@ -31,7 +31,6 @@ Generate 4 numbers, $(A,B,C,D)$ in a tuple, one for the length of each broken ca
 Lengths $A$ and $B$ are from one 98-inch cane, and $C$ and $D$ are from the other 98-inch cane, such that:
  - $1 \leq A < B \leq 97$
  - $1 \leq C < D \leq 97$
- - $A < C$
  - $A + B = 98$
  - $C + D = 98$
 
