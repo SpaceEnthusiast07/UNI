@@ -10,7 +10,7 @@ generator1
     , b <- t
     , c <- t
     , d <- t
-    , a < b && c < d && a < c
+    , a < b && c < d
     , a + b == 98
     , c + d == 98
     ]
