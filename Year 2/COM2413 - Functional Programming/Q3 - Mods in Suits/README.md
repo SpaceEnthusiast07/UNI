@@ -58,14 +58,45 @@ A $game$ is represented by a pair (2-tuple) of $hands$.
 <br>
 
 ## Generator
-Since Haskell doesn't have structures or classes, the idea of a card, hand, and game are merely conceptual.
+Since Haskell doesn't have structures or classes, the idea of a card, hand, and game are purely conceptual.
 
-The list the generator returns will be: ($game$-($hand$-($card$,$card$), $hand$-($card$,$card$))).
+The list the generator returns will be: ($game$-($hand$-($card$,$card$), $hand$-($card$,$card$))) structure.
 
 
 <br>
 
 ## Selector
-...
+Given a FINAL game, determine if a middle game (BEFORE exchanging second card) exists such that:
+ - the overall player score is unchanged
+ - the initial game has all different suits and values
+ - the final game has all different suits
 
+<br>
 
+> [!NOTE]
+> Since only the second card is changed and all the suits are still different, that means Jo and Bo simply swap second card suits!
+
+Selector input: `((jo_final_hand),(bo_final_hand))`. `jo_final_hand.card_1` and `bo_final_hand.card_1` remain unchanged. Jo and Bo swap thier `card_2.suit`.
+
+Initial draw: `(((jis1,jiv1),(jis2,jiv2)),((bis1,biv1),(bis2,biv2)))`.
+ - `j` = Jo
+ - `b` = Bo
+ - `i` = initial
+ - `s` = suit
+ - `v` = value
+ - `1` = first card
+ - `2` = second card
+
+Since first cards stay the same and second card's suits are swapped, final game: `(((jis1,jiv1),(bis2,jfv2)),((bis1,biv1),(jis2,bfv2)))`.
+ - `f` = final
+
+We want:
+ - `handScore ((jis1,jiv1),(jis2,jiv2)) == handScore ((jis1,jiv1),(bis2,jfv2))`
+ - `handScore ((bis1,biv1),(bis2,biv2)) == handScore ((bis1,biv1),(jis2,bfv2))`
+
+We know everything except for `jiv2` and `biv2`.
+
+**Selector Steps:**
+1. Calculate initial second cards values for both Jo and Bo based on initial first card and swapped second card suit, such that the hand value is unchanged.
+2. Ensure this value is between 1 and 13, inclusive.
+3. Ensure all initial card values are different.
