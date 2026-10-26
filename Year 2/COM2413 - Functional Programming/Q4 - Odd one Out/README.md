@@ -17,8 +17,6 @@ Only 7 of Martha's primes are primes in reverse.
 
 **Answer:** $173$.
 
-Since George's grid is not linked in any way to Martha's, we do not need to consider George's grid at all.
-
 
 <br>
 
@@ -34,3 +32,6 @@ Each number:
 <br>
 
 ## Selector
+Generate a list of all 3-digit numbers of only odd digits that are prime and prime in reverse.
+
+Could use list difference to see if replacing 1 digit from any of the 8 fancy primes would result in only 7 fancy primes.
