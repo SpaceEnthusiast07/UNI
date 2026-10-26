@@ -1,41 +1,43 @@
 import Data.List((\\))
 
 {-
-    - Determines the modified value of the provided card (1st tuple element)
-    - In the case of Diamond being the suit, the second card is used (right element in hand tuple)
-    - s = suit; fv = face value
+    - Determines the modified value of the provided card (1st tuple)
+    - In the case of the suit being Diamond, the second card is used (2nd tuple)
+    - s = suit; fv = face value; _f = float
 -}
-cardScore :: (Char,Int) -> (Char,Int) -> Int
+cardScore :: (Char,Int) -> (Char,Int) -> Float
 cardScore (s1,fv1) (s2,fv2)
     = case s1 of
-    'S' -> fv1 * fv1
-    'H' -> fv1 `div` 2
-    'C' -> -1 * fv1
-    'D' -> fv1 `div` fv2
-
-
+    'S' -> fv1_f * fv1_f
+    'H' -> fv1_f / 2
+    'C' -> -1 * fv1_f
+    'D' -> fv1_f / fv2_f
+    where
+    fv1_f = fromIntegral fv1
+    fv2_f = fromIntegral fv2
 
 {-
     - Returns the score of a player's hand
-    - Utilises score function for each card
+    - Utilises cardScore function for each card
     - s = suit; fv = face value
 -}
-handScore :: ((Char,Int),(Char,Int)) -> Int
-handScore ((s1,fv1),(s2,fv2))
+handScore :: (Char,Int) -> (Char,Int) -> Float
+handScore (s1,fv1) (s2,fv2)
     = (cardScore (s1,fv1) (s2,fv2)) + (cardScore (s2,fv2) (s1,fv1))
 
-
-
+{-
+    - Determines if the provided float is an integer
+-}
 isInt :: Float -> Bool
-isInt x
-    = floor x == ceiling x
-
-
+isInt n
+    = floor n == ceiling n
 
 {-
     - Generator outputs final games
-    - "js1" refers to the suit of Jo's 1st card
-    - "bv2" refers to the value of Bo's 2nd card
+    - There must be 4 distinct suits present
+    - Jo's score must be a positive integer
+    - Bo's score must be the negative of Jo's and an integer
+    - j = Jo; b = Bo; s = suit; v = face value; 1 = card 1; 2 = card 2
 -}
 generator3 :: [(((Char,Int),(Char,Int)),((Char,Int),(Char,Int)))]
 generator3
@@ -45,88 +47,72 @@ generator3
     , jv1 <- values
     , js2 <- suits \\ [js1]
     , jv2 <- values
-    -- Jo's score would be 0 if values the same
+    -- Jo's score would be 0 if values are the same
     , jv1 /= jv2
-    -- Ensure Jo's score is positive
-    , (handScore ((js1,jv1),(js2,jv2))) > 0
+    -- Improve code readability
+    , let josScore = handScore (js1,jv1) (js2,jv2)
+    -- Ensure Jo's score is a positive integer
+    , (josScore > 0) && (isInt josScore)
     -- Set up Bo's two final cards
     , bs1 <- suits \\ [js1,js2]
     , bv1 <- values
     , bs2 <- suits \\ [js1,js2,bs1]
     , bv2 <- values
-    -- Bo's score would be 0 if values the same
+    -- Bo's score would be 0 if values are the same
     , bv1 /= bv2
-    -- Bo's score is the negative of Jo's
-    , (handScore ((bs1,bv1),(bs2,bv2))) == -1 * (handScore ((js1,jv1),(js2,jv2)))
-    -- Ensure scores are whole numbers (ints)
-    , if js1 == 'D' && (isInt ((fromIntegral jv1)/(fromIntegral jv2))) == False then False else True
-    , if js1 == 'H' && (isInt ((fromIntegral jv1)/2)) == False then False else True
-    , if js2 == 'D' && (isInt ((fromIntegral jv2)/(fromIntegral jv2))) == False then False else True
-    , if js2 == 'H' && (isInt ((fromIntegral jv2)/2)) == False then False else True
-    , if bs1 == 'D' && (isInt ((fromIntegral bv1)/(fromIntegral bv2))) == False then False else True
-    , if bs1 == 'H' && (isInt ((fromIntegral bv1)/2)) == False then False else True
-    , if bs2 == 'D' && (isInt ((fromIntegral bv2)/(fromIntegral bv2))) == False then False else True
-    , if bs2 == 'H' && (isInt ((fromIntegral bv2)/2)) == False then False else True
+    -- Improve code readability
+    , let bosScore = handScore (bs1,bv1) (bs2,bv2)
+    -- Ensure Bo's score is an integer
+    , isInt bosScore
+    -- Ensure Bo's score is the negative of Jo's
+    , (-1 * bosScore) == josScore
     ]
     where
-    suits = "CDHS"
+    suits = "SHCD"
     values = [1..13]
 
-
-
-calcInitialCard2Value :: ((Char,Int),(Char,Int)) -> Char -> Int
+{-
+    - Given the final second card and the initial second card's suit,
+      calculate what the initial second card's value would have been
+-}
+calcInitialCard2Value :: ((Char,Int),(Char,Int)) -> Char -> Float
 calcInitialCard2Value ((fs1,fv1),(fs2,fv2)) is2
     = case is2 of
-    'S' -> round (sqrt (fromIntegral (final_card_2_score)))
+    'S' -> sqrt (final_card_2_score)
     'H' -> 2 * final_card_2_score
     'C' -> -1 * final_card_2_score
-    'D' -> fv1 * final_card_2_score
+    'D' -> (fromIntegral fv1) * final_card_2_score
     where
     final_card_2_score = cardScore (fs2,fv2) (fs1,fv1)
 
-
-
+{-
+    - Selects final games that have an initial game satisfying the following constraints:
+    - All card values must be between 1 and 13 inclusive
+    - Each player's score must be unchanged after exchanging second card
+    - All initial card values must be different
+    - f = final; i = initial; _f = float
+-}
 selector3 :: (((Char,Int),(Char,Int)),((Char,Int),(Char,Int))) -> Bool
 selector3 (((jfs1,jfv1),(jfs2,jfv2)),((bfs1,bfv1),(bfs2,bfv2)))
-    =  jiv2 >= 1 && jiv2 <= 13
-    && biv2 >= 1 && biv2 <= 13
-    && (length ([1..13] \\ [jfv1,bfv1,jiv2,biv2])) == 9
-    && (handScore ((jfs1,jfv1),(bfs2,jiv2))) == (handScore ((jfs1,jfv1),(jfs2,jfv2)))
-    && (handScore ((bfs1,bfv1),(jfs2,biv2))) == (handScore ((bfs1,bfv1),(bfs2,bfv2)))
+    -- Ensure initial second card values are in the acceptable range
+    =  jiv2_f >= 1 && jiv2_f <= 13
+    && biv2_f >= 1 && biv2_f <= 13
+    -- Ensure Jo's and Bo's initial second card values are integers
+    && (isInt jiv2_f) && (isInt biv2_f)
+    -- Ensure all the initial card values are different
+    && (length ([1..13] \\ [jfv1,jiv2,bfv1,biv2])) == 9
+    -- Ensure both Jo's and Bo's scores remain unchanged
+    && (handScore (jfs1,jfv1) (bfs2,jiv2)) == (handScore (jfs1,jfv1) (jfs2,jfv2))
+    && (handScore (bfs1,bfv1) (jfs2,biv2)) == (handScore (bfs1,bfv1) (bfs2,bfv2))
+    -- Ensure Jo and Bo don't swap second card values when they exchange their second card
     && jfv2 /= biv2 && bfv2 /= jiv2
     where
-    jiv2 = calcInitialCard2Value ((jfs1,jfv1),(jfs2,jfv2)) bfs2
-    biv2 = calcInitialCard2Value ((bfs1,bfv1),(bfs2,bfv2)) jfs2
-
-
+    -- Calculate what Jo's and Bo's initial second card values would have been
+    jiv2_f = calcInitialCard2Value ((jfs1,jfv1),(jfs2,jfv2)) bfs2
+    biv2_f = calcInitialCard2Value ((bfs1,bfv1),(bfs2,bfv2)) jfs2
+    -- Convert above values to integers
+    jiv2 = floor jiv2_f
+    biv2 = floor biv2_f
 
 main :: IO ()
 main = print (filter selector3 generator3)
-
-
-
-
-
-
-{-
-    Testing functions
--}
-x_generator3 :: Int
-x_generator3
-    = length [t | t <- [t1,t2,t3,t4,t5], t]
-    where
-    t1 = ((('D',6) ,('H',2)),(('C',5),('S',1))) `elem` generator3
-    t2 = ((('D',10),('H',2)),(('C',7),('S',1))) `elem` generator3
-    t3 = ((('S',1),('D',6)),(('C',9),('H',4))) `elem` generator3
-    t4 = ((('S',2),('D',8)),(('C',10),('H',4))) `elem` generator3
-    t5 = ((('D',6),('S',1)),(('C',13),('H',12))) `elem` generator3
-
-x_selector3 :: Int
-x_selector3
-    = length [t | t <- [t1,t2,t3,t4,t5], t]
-    where
-    t1 = selector3 ((('D',7),('S',7)),(('C',1),('H',2))) == False
-    t2 = selector3 ((('D',3),('H',3)),(('C',3),('S',3))) == False
-    t3 = selector3 ((('S',1),('D',4)),(('C',7),('H',4))) == False
-    t4 = selector3 ((('D',10),('H',2)),(('C',10),('S',2))) == False
-    t5 = selector3 ((('D',2),('H',2)),(('C',13),('S',13))) == False
