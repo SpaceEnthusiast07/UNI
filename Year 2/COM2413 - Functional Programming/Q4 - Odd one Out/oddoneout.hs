@@ -34,9 +34,9 @@ generator4
     oddDigits = "13579"
 
 
-genGeorgesGrids :: String -> [String]
+genGeorgesGrids :: String -> Bool
 genGeorgesGrids [n1,n2,n3]
-    = [[c1,c2,c3
+    = length [[c1,c2,c3
        ,c4,c5,c6
        ,c7,c8,c9]
     | c1 <- oddDigits
@@ -48,27 +48,33 @@ genGeorgesGrids [n1,n2,n3]
     , c7 <- oddDigits
     , c8 <- oddDigits
     , c9 <- oddDigits
-    , let grid = [c1,c2,c3,c4,c5,c6,c7,c8,c9] :: String
-    , (length ([c1,c2,c3] \\ [n1,n2,n3])) == 1
-    || (length ([c4,c5,c6] \\ [n1,n2,n3])) == 1
-    || (length ([c7,c8,c9] \\ [n1,n2,n3])) == 1
-    || (length ([c1,c4,c7] \\ [n1,n2,n3])) == 1
-    || (length ([c2,c5,c8] \\ [n1,n2,n3])) == 1
-    || (length ([c3,c6,c9] \\ [n1,n2,n3])) == 1
-    || (length ([c1,c5,c9] \\ [n1,n2,n3])) == 1
-    || (length ([c3,c5,c7] \\ [n1,n2,n3])) == 1
-    -- Prime num rule for each row
-    , isPrime (read [c1,c2,c3]) && isPrime (read [c3,c2,c1])
-    , isPrime (read [c4,c5,c6]) && isPrime (read [c6,c5,c4])
-    , isPrime (read [c7,c8,c9]) && isPrime (read [c9,c8,c7])
-    -- Prime num rule for each column
-    && isPrime (read [c1,c4,c7]) && isPrime (read [c7,c4,c1])
-    && isPrime (read [c2,c5,c8]) && isPrime (read [c8,c5,c2])
-    && isPrime (read [c3,c6,c9]) && isPrime (read [c9,c6,c3])
-    -- Prime num rule for each diagonal
-    && isPrime (read [c1,c5,c9]) && isPrime (read [c9,c5,c1])
-    && isPrime (read [c3,c5,c7]) && isPrime (read [c7,c5,c3])
-    ]
+    -- Ensure the 8 numbers are prime when read forwards
+    ,  isPrime (read [c1,c2,c3]) && isPrime (read [c4,c5,c6]) && isPrime (read [c7,c8,c9])
+    && isPrime (read [c1,c4,c7]) && isPrime (read [c2,c5,c8]) && isPrime (read [c3,c6,c9])
+    && isPrime (read [c1,c5,c9]) && isPrime (read [c3,c5,c7])
+    -- 
+    ,  (length ([c1,c2,c3] \\ [n1,n2,n3])) == 0
+    || (length ([c4,c5,c6] \\ [n1,n2,n3])) == 0
+    || (length ([c7,c8,c9] \\ [n1,n2,n3])) == 0
+    || (length ([c1,c4,c7] \\ [n1,n2,n3])) == 0
+    || (length ([c2,c5,c8] \\ [n1,n2,n3])) == 0
+    || (length ([c3,c6,c9] \\ [n1,n2,n3])) == 0
+    || (length ([c1,c5,c9] \\ [n1,n2,n3])) == 0
+    || (length ([c3,c5,c7] \\ [n1,n2,n3])) == 0
+    -- Check if each num is not prime backwards, if so, is it the number in question
+    , length [t 
+        | let t1 = if (not (isPrime (read [c3,c2,c1]))) then [c1,c2,c3] == [n1,n2,n3] else False
+        , let t2 = if (not (isPrime (read [c6,c5,c4]))) then [c4,c5,c6] == [n1,n2,n3] else False
+        , let t3 = if (not (isPrime (read [c9,c8,c7]))) then [c7,c8,c9] == [n1,n2,n3] else False
+        , let t4 = if (not (isPrime (read [c7,c4,c1]))) then [c1,c4,c7] == [n1,n2,n3] else False
+        , let t5 = if (not (isPrime (read [c8,c5,c2]))) then [c2,c5,c8] == [n1,n2,n3] else False
+        , let t6 = if (not (isPrime (read [c9,c6,c3]))) then [c3,c6,c9] == [n1,n2,n3] else False
+        , let t7 = if (not (isPrime (read [c9,c5,c1]))) then [c1,c5,c9] == [n1,n2,n3] else False
+        , let t8 = if (not (isPrime (read [c7,c5,c3]))) then [c3,c5,c7] == [n1,n2,n3] else False
+        , t <- [t1,t2,t3,t4,t5,t6,t7,t8]
+        , t
+        ] == 1
+    ] > 0
     where
     oddDigits = "1379"
 
@@ -93,8 +99,8 @@ selector4 [n1,n2,n3]
 
 main :: IO ()
 -- main = print (filter selector4 generator4)
--- main = print (genGeorgesGrids "173")
-main = print (length generator4)
+main = print (genGeorgesGrids "173")
+-- main = print (length generator4)
 
 
 
