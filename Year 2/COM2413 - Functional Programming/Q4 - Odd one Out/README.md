@@ -35,3 +35,8 @@ Each number:
 Generate a list of all 3-digit numbers of only odd digits that are prime and prime in reverse.
 
 Could use list difference to see if replacing 1 digit from any of the 8 fancy primes would result in only 7 fancy primes.
+
+Given a 3-digit number `N` formed using odd digits that is prime but not prime when read backwards, can I substitute this for one of the 8 different double primes from George's 3x3 grid so that I only change one square and only 7 double primes now exist?
+
+If I just analysed Martha's grid, that would provide multiple solutions; to filter it down to 1, I would need to compare it to George's grid to see if only 1 digit has changed.
+
