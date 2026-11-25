@@ -4,16 +4,18 @@ import java.nio.charset.StandardCharsets;
 
 public class Server {
 	public static void main(String[] args) {
+        System.out.println("=== Server for Basic Java Networking Application ===");
+
 		// Set up a new TCP connection listener on port 5000
         try (ServerSocket server = new ServerSocket(5000)) {
             // Ouptut successful TCP connection
-            System.out.printf("LOG: Server listening on port %d\n", server.getLocalPort());
+            System.out.printf("\nLOG: Server listening on port %d\n\n", server.getLocalPort());
 
             // Wait for a new TCP Connection request
             // Program waits here until a new connection request arrives
             try (Socket client = server.accept()) {
                 // Ouptut successful TCP connection
-                System.out.printf("LOG: Client connected on port %d from remote address %s\n", 
+                System.out.printf("\nLOG: Client connected on port %d from remote address %s\n\n", 
                     client.getLocalPort(), client.getRemoteSocketAddress());
                 
                 // Initialise the input stream - receive data
@@ -26,14 +28,21 @@ public class Server {
                     new OutputStreamWriter(client.getOutputStream(), StandardCharsets.UTF_8), true
                 );
 
-                // Read the received message
-                String message = in.readLine();
+                String message = "default";
+                while (message != "\\q") {
+                    // Read the received message
+                    message = in.readLine();
 
-                // Log the received message
-                System.out.printf("LOG: Received \"%s\"\n", message);
+                    System.out.println("--- New Message ---");
 
-                // Echo the message back to the client
-                out.printf("Echo: %s\n", message);
+                    // Log the received message
+                    System.out.printf("Received \"%s\"\n\n", message);
+
+                    // Echo the message back to the client
+                    out.printf("Echo: %s\n", message);
+
+                    in.readLine();
+                }
             } catch (IOException e) {
                 System.out.println("ERROR: Couldn't create new client Socket.");
             }
