@@ -2,4 +2,4 @@
 
 javac Client.java
 
-Java Client
+Java Client %1 %2
